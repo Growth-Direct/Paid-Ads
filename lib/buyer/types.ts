@@ -120,10 +120,16 @@ export interface TwoWeekRow {
     w2Target: number | null
     w2Achieved: number | null
     w2Lag: number | null
-    /** The same flat 14-day pro-rata share of the full quarter target as w2Target — the target
-     *  grid paces at a constant run-rate, so the upcoming 2 weeks' target is the identical
-     *  number as the last 2 weeks' was, just with no "achieved" yet to compare it to. */
-    nextW2Target: number | null
+    /** How much of this metric needs to happen per week, every week, for the rest of the real
+     *  quarter (today through quarterEnd — NOT the Time filter's window, even when one is
+     *  active) to land exactly on the full quarter target: (qTargetFull − true QTD achieved) ÷
+     *  weeks remaining. Replaced the old hand-typed "Next 2wk Target" — this is the same
+     *  question ("what do we need to hit the target") answered by computing it instead of
+     *  asking someone to type in a number that goes stale the moment the pace changes. Null for
+     *  rate metrics (a % or cost-per-X row doesn't accumulate, so "per week" is meaningless),
+     *  metrics with no target, or once the quarter has ended. Floored at 0 — already past
+     *  target reads as "nothing more needed", not a negative pace. */
+    weeklyPaceNeeded: number | null
 }
 
 export interface HouseWarmPoint {

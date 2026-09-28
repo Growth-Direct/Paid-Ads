@@ -344,21 +344,20 @@ Raise these when they become load-bearing, rather than quietly picking an answer
     Jul 5 anchor. The Seller side's spend/cost-per figures also shift slightly: the "Seller side
     spends" sheet has real spend rows dated Jul 1–4 that were previously excluded and are now
     in-window. See `lib/seller/types.ts`'s `SELLER_QUARTER_START_ISO` doc comment.
-11. **The Target vs Achieved table's "Next 2wk Target" column is now entered per channel or per
-    micromarket, not as one flat number.** Changed 2026-09-10, per an explicit growth-team
-    request to mirror how the quarterly target grid (`lib/seller/targets.ts`) already works:
-    typed in per channel/micromarket, with a cluster's total and the overall "All channels"
-    total adding up from their own parts rather than being separately typed. Two independent
-    breakdowns (channel, or micromarket — never a joint grid, never per raw source), reusing the
-    same single input box per metric row: what it reads/writes depends on the current Channel /
-    Cluster-MM filter selection now. A cluster (or the Overall total) shows blank, not a partial
-    sum, until every one of its parts has a number — confirmed with the growth team directly, so
-    a low-looking total is never mistaken for a real one. This has no Metabase equivalent at all
-    — it is a dashboard-only planning input, same as items 7 and 8 above. The 5 numbers saved
-    under the old flat shape were discarded, per the growth team's own choice — this was a clean
-    break, not a migration. See `components/seller/SellerTab.tsx`'s
-    `resolveNextTargetScope`/`nextTargetView` and `lib/seller/nextTargets.ts`'s doc comment for
-    the new compound key format.
+11. **The Target vs Achieved table's editable "Next 2wk Target" column (and the separate "Next
+    Actionables" section) were removed entirely, 2026-09-29, per an explicit growth-team
+    request, on both Buyer and Seller.** Replaced by a computed "Weekly Pace Needed" column:
+    `(quarter target − QTD achieved) ÷ weeks remaining in the real quarter` — always measured
+    against the true quarter (today through quarter-end), never the Time filter's window, so a
+    filter narrowing to a channel/micromarket/source still changes the number (through the
+    target/achieved it's built from) but a filter narrowing to a past date range does not change
+    what "weeks remaining" means. Null for rate metrics (a % or cost-per-X row doesn't
+    accumulate) and floored at 0 once already past target. This replaces both the old hand-typed
+    per-channel/per-micromarket "Next 2wk Target" breakdown (items previously described here)
+    and the free-text "Next Actionables" box — the growth team no longer types in a projection
+    that goes stale; the dashboard computes what's actually required. No Metabase equivalent
+    (same as item 8 below). See `lib/buyer/derive.ts`'s and `lib/seller/derive.ts`'s
+    `weeklyPaceNeededFor`.
 12. **New buyer-side metric, "Direct % of Bids" — a company-wide Direct-vs-Channel-Partner
     split, with no doc or Metabase equivalent.** Added 2026-09-15, per an explicit growth-team
     request to see "where we stand against CP" — until now Channel Partner was only ever an

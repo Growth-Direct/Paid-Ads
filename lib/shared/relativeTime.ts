@@ -1,5 +1,5 @@
-/** "just now" / "5m ago" / "3h ago" / "12 Sep" — used by every "Saved …" caption next to a
- *  shared, persisted free-text or free-number field (Next Actionables, Next 2wk Target). */
+/** "just now" / "5m ago" / "3h ago" / "12 Sep" — used by SpendNote's "pulled …" caption for a
+ *  live spend source. */
 export function relativeTime(iso: string): string {
     const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
     if (seconds < 60) return 'just now'

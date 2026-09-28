@@ -926,6 +926,21 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
         return Math.round(diff * 1000) / 1000
     }
 
+    // Weekly Pace Needed: replaces the old hand-typed "Next 2wk Target" (2026-09-29, per the
+    // growth team) — instead of someone typing in a number that goes stale the moment the pace
+    // changes, this computes what's actually required. Always measured against the REAL
+    // quarter (today through quarterEnd), never the Time filter's window — a filter narrows
+    // which leads count (channel/micromarket/source), which this correctly reflects through
+    // qTargetFull/qAchieved, but "weeks left" always means weeks left in the real quarter.
+    // Null for rate metrics (a % or cost-per-X doesn't accumulate) and once the quarter's over.
+    const realWeeksRemaining = Math.max(0, (quarterEnd.getTime() - now.getTime()) / DAY_MS) / 7
+    function weeklyPaceNeededFor(metric: string, qTargetFull: number | null, qAchieved: number | null): number | null {
+        if (qTargetFull == null || qAchieved == null) return null
+        if (NO_TARGET_METRICS.has(metric) || RATE_METRICS.has(metric)) return null
+        if (realWeeksRemaining <= 0) return null
+        return Math.round((Math.max(0, qTargetFull - qAchieved) / realWeeksRemaining) * 1000) / 1000
+    }
+
     const twoWeekTable: TwoWeekRow[] = TWO_WEEK_METRIC_ORDER.map((metric) => {
         const qTarget = qTargetsRow[metric] ?? null
         const qAchieved = qActualsRow[metric] ?? null
@@ -945,9 +960,7 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
             w2Target,
             w2Achieved,
             w2Lag: lagFor(metric, w2Target, w2Achieved),
-            // Same flat-rate formula as w2Target — the run-rate target for the next 2 weeks is
-            // identical to the last 2 weeks', there is just no achieved figure for it yet.
-            nextW2Target: w2TargetFor(metric),
+            weeklyPaceNeeded: weeklyPaceNeededFor(metric, qTargetFull, qAchieved),
         }
     })
 

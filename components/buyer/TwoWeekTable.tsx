@@ -98,38 +98,6 @@ const PRIMARY = new Set([
     'Total Conversions',
 ])
 
-/** A right-aligned number input standing in for the plain "Next 2wk Target" text — same column,
- *  same position, just typable. Empty clears the override (falls back to the computed default
- *  next render). */
-function EditableTargetCell({
-    value,
-    onChange,
-}: {
-    value: number | null
-    onChange: (value: number | null) => void
-}) {
-    return (
-        <input
-            type="number"
-            value={value ?? ''}
-            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-            style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                textAlign: 'right',
-                fontVariantNumeric: 'tabular-nums',
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 12.5,
-                color: '#000000',
-                background: '#fff',
-                border: '1px solid #CCCCCC',
-                borderRadius: 4,
-                padding: '3px 6px',
-            }}
-        />
-    )
-}
-
 export interface MetricGroup {
     label: string
     metrics: string[]
@@ -140,28 +108,12 @@ const GROUP_HEADER_BG = '#F5F5F5'
 export default function TwoWeekTable({
     data,
     primaryMetrics = PRIMARY,
-    editableNextW2Target = false,
-    nextW2TargetOverrides,
-    onNextW2TargetChange,
     groups,
 }: {
     data: TwoWeekRow[]
     /** Which metric names render bold/flush-left (the rest render indented/muted). Defaults to
      *  the Buyer set; Seller passes its own since the two tables' metric names don't overlap. */
     primaryMetrics?: Set<string>
-    /** Turns the Next 2wk Target column into a typable number input per row, keyed by
-     *  row.metric — the growth team's own projection, overriding the computed flat-rate default.
-     *  Seller-only opt-in; Buyer's own table renders the column exactly as before (plain,
-     *  computed text) when this is left false. */
-    editableNextW2Target?: boolean
-    /** Keyed by row.metric, but the caller decides what that key MEANS — Seller sometimes keys
-     *  it to one specific channel/micromarket's own saved number (when `editableNextW2Target`),
-     *  sometimes to a computed sum or `null` for the current Channel/Cluster-MM filter scope
-     *  (when not editable, read in the plain-text branch too) — see SellerTab.tsx's
-     *  resolveNextTargetScope. `undefined` (key absent) always falls back to the computed
-     *  `row.nextW2Target`; `null` is a real, deliberate blank. */
-    nextW2TargetOverrides?: Record<string, number | null>
-    onNextW2TargetChange?: (metric: string, value: number | null) => void
     /** Added 2026-09-26, per the growth team's own "hard to scan, needs grouping" feedback.
      *  Splits the flat metric list into collapsible sections (default expanded) instead of
      *  one long wall of rows — presentation only, no data change. Omitted (Budget Pacing's
@@ -205,31 +157,7 @@ export default function TwoWeekTable({
                 <td style={{ ...td, fontWeight: 600 }}>
                     <LagPill value={row.w2Lag} unit={row.unit} />
                 </td>
-                <td style={{ ...td, padding: '6px 0 6px 8px', color: '#333333' }}>
-                    {editableNextW2Target ? (
-                        <EditableTargetCell
-                            value={(() => {
-                                const override = nextW2TargetOverrides?.[row.metric]
-                                if (override !== undefined) return override
-                                return row.nextW2Target != null ? Math.round(row.nextW2Target) : null
-                            })()}
-                            onChange={(value) => onNextW2TargetChange?.(row.metric, value)}
-                        />
-                    ) : (
-                        // Even in read-only mode, an override map (if supplied) wins over the
-                        // computed default — Seller uses this to show a computed sum (or a
-                        // blank) for the current Channel/Cluster-MM scope, not the flat
-                        // pro-rata default. Buyer never passes this map, so this is a no-op
-                        // for it: undefined falls straight through to today's behavior.
-                        fmt(
-                            (() => {
-                                const override = nextW2TargetOverrides?.[row.metric]
-                                return override !== undefined ? override : row.nextW2Target
-                            })(),
-                            row.unit
-                        )
-                    )}
-                </td>
+                <td style={{ ...td, padding: '6px 0 6px 8px', color: '#333333' }}>{fmt(row.weeklyPaceNeeded, row.unit)}</td>
             </tr>
         )
     }
@@ -316,7 +244,7 @@ export default function TwoWeekTable({
                         <th style={{ ...th, ...stickyTh, background: HIGHLIGHT_BG }}>Last 2wk Target</th>
                         <th style={{ ...th, ...stickyTh, background: HIGHLIGHT_BG }}>Last 2wk Achieved</th>
                         <th style={{ ...th, ...stickyTh }}>Last 2wk Lag</th>
-                        <th style={{ ...th, ...stickyTh, padding: '4px 0 8px 8px' }}>Next 2wk Target</th>
+                        <th style={{ ...th, ...stickyTh, padding: '4px 0 8px 8px' }}>Weekly Pace Needed</th>
                     </tr>
                 </thead>
                 <tbody>{body}</tbody>

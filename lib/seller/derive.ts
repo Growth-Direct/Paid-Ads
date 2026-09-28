@@ -818,6 +818,19 @@ export function deriveReport(facts: SellerFacts, opts: SellerDeriveOptions): Omi
         return Math.round(diff * 1000) / 1000
     }
 
+    // Weekly Pace Needed — mirrors lib/buyer/derive.ts's own weeklyPaceNeededFor exactly: what's
+    // required per week for the rest of the REAL quarter (not the Time filter's window) to land
+    // on the full target. Replaces the old hand-typed "Next 2wk Target".
+    const realWeeksRemaining = Math.max(0, (quarterEnd.getTime() - now.getTime()) / DAY_MS) / 7
+    function weeklyPaceNeededFor(metric: string): number | null {
+        const qTargetFull = qTargetsFull[metric] ?? null
+        const qAchieved = qActualsRow[metric] ?? null
+        if (qTargetFull == null || qAchieved == null) return null
+        if (RATE_METRICS.has(metric)) return null
+        if (realWeeksRemaining <= 0) return null
+        return Math.round((Math.max(0, qTargetFull - qAchieved) / realWeeksRemaining) * 1000) / 1000
+    }
+
     const targetVsAchieved: TwoWeekRow[] = METRIC_ORDER.map((metric) => {
         const qTarget = pacedQTarget(metric)
         const qAchieved = qActualsRow[metric] ?? null
@@ -832,9 +845,7 @@ export function deriveReport(facts: SellerFacts, opts: SellerDeriveOptions): Omi
             w2Target,
             w2Achieved,
             w2Lag: lagFor(metric, w2Target, w2Achieved),
-            // Same flat-rate formula as w2Target — the run-rate target for the next 2 weeks is
-            // identical to the last 2 weeks', there is just no achieved figure for it yet.
-            nextW2Target: w2TargetFor(metric),
+            weeklyPaceNeeded: weeklyPaceNeededFor(metric),
         }
     })
 
