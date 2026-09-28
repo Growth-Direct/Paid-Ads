@@ -97,21 +97,6 @@ for (const [cluster, micromarkets] of Object.entries(CLUSTER_TREE)) {
     for (const mm of micromarkets) MICROMARKET_TO_CLUSTER.set(mm, cluster)
 }
 
-const VALID_MICROMARKETS = new Set<string>(SELLER_MICROMARKETS)
-
-/** A seller's PRIMARY micromarket (its first Truva_Micromarket value), normalized: one of the
- *  12 canonical SELLER_MICROMARKETS passes through unchanged; a blank value OR an unrecognised
- *  one (live junk like "Outside MM", "Unrecognised yet") becomes 'Unmapped' — mirrors
- *  mapSellerChannel's own blank-and-unrecognised-both-fall-to-Unmapped rule, so a new/junk
- *  micromarket announces itself as its own visible bucket instead of drawing a stray bar per
- *  distinct junk string or silently vanishing. Added 2026-09-24 per an explicit growth-team
- *  request ("add unmapped for all non mapped micromarkets"). Every chart that buckets by
- *  "primary micromarket" should read this, not `micromarkets[0] || 'Unknown'` directly. */
-export function mappedMicromarket(micromarkets: string[]): string {
-    const raw = (micromarkets[0] ?? '').trim()
-    return raw && VALID_MICROMARKETS.has(raw) ? raw : 'Unmapped'
-}
-
 /** Which micromarkets a Cluster/MM filter selection implies, in canonical SELLER_MICROMARKETS
  *  order — micromarkets carry the whole intent when picked (NestedList ticks a cluster's
  *  children the moment its parent is), clusters only matter as a fallback, and nothing

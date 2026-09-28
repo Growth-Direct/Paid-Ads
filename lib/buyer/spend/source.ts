@@ -1,5 +1,6 @@
 import type { SpendFact, SpendIngest } from '../facts'
 import { fetchLedgerSpend, ledgerConfigured } from './ledger'
+import { fetchMetaSpend, metaDirectConfigured } from './meta'
 import snapshot from './spend-jas26.json'
 
 // Where buyer spend comes from.
@@ -66,6 +67,37 @@ function fromSnapshot(): SpendSnapshot {
  * block and the dashboard shows a gap, which is the honest answer.
  */
 export async function loadSpend(windowStart: string, windowEnd: string): Promise<SpendSnapshot> {
-    if (!ledgerConfigured()) return fromSnapshot()
-    return fetchLedgerSpend(windowStart, windowEnd)
+    const base = ledgerConfigured() ? await fetchLedgerSpend(windowStart, windowEnd) : fromSnapshot()
+    if (!metaDirectConfigured()) return base
+    return overlayMetaSpend(base, await fetchMetaSpend(windowStart, windowEnd))
+}
+
+/**
+ * Layers a live Meta pull ('meta' rawSource rows only) on top of whatever loadSpend's base
+ * source (ledger or snapshot) returned — added 2026-09-28, per an explicit growth-team
+ * request to make Meta cost reflect today rather than the ledger's own (currently stalled)
+ * platform pull. Every non-Meta row (3P, Offline, Organic, Society, Referral & WOM) is left
+ * completely untouched; only 'meta' rows are replaced, never merged with the base's own —
+ * summing the two would double-count the same spend from two sources.
+ *
+ * A failed live pull is NOT a base-read failure: it falls back to the base's own Meta rows
+ * (exactly today's behaviour) rather than turning a working ledger read into a page-wide gap,
+ * and says so in `error` so the growth team can see the live overlay itself is what's stale,
+ * not the whole spend block.
+ */
+export function overlayMetaSpend(base: SpendSnapshot, meta: Awaited<ReturnType<typeof fetchMetaSpend>>): SpendSnapshot {
+    if (meta.ingest.status !== 'ok') {
+        const note = `Live Meta pull failed: ${meta.ingest.error ?? 'unknown error'} — showing ${base.ingest.origin}'s own Meta figures instead`
+        return { ...base, ingest: { ...base.ingest, error: [base.ingest.error, note].filter(Boolean).join('. ') } }
+    }
+    const nonMeta = base.facts.filter((f) => f.rawSource !== 'meta')
+    const notes = [base.ingest.error, meta.ingest.error].filter((n): n is string => !!n)
+    return {
+        facts: [...nonMeta, ...meta.facts],
+        ingest: {
+            ...base.ingest,
+            error: notes.length > 0 ? notes.join('. ') : null,
+            metaLiveAsOf: meta.ingest.builtAt,
+        },
+    }
 }

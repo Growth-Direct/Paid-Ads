@@ -53,8 +53,8 @@ function CustomTooltip({
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 8,
                 padding: '10px 12px',
                 fontSize: 12,
@@ -70,7 +70,7 @@ function CustomTooltip({
             <div style={{ color: colorFor(P80_LABEL), marginTop: 2 }}>
                 {P80_LABEL}: {fmtMinutes(row.p80Minutes)}
             </div>
-            <div style={{ color: '#9a948a', marginTop: 2 }}>{row.count} working-hours leads with a response</div>
+            <div style={{ color: '#333333', marginTop: 2 }}>{row.count} working-hours leads with a response</div>
         </div>
     )
 }
@@ -88,36 +88,36 @@ export default function FrtChart({ data }: Props) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
-                <CartesianGrid vertical={false} stroke="#efe9e0" strokeDasharray="0" />
+                <CartesianGrid vertical={false} stroke="#F5F5F5" strokeDasharray="0" />
                 <XAxis
                     dataKey="weekLabel"
-                    tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9a948a' }}
+                    tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#333333' }}
                     axisLine={false}
                     tickLine={false}
                 />
                 <YAxis
                     allowDecimals={false}
                     width={40}
-                    tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9a948a' }}
+                    tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#333333' }}
                     axisLine={false}
                     tickLine={false}
                     label={{
                         value: 'minutes',
                         angle: -90,
                         position: 'insideLeft',
-                        style: { fontSize: 10, fill: '#9a948a', textAnchor: 'middle' },
+                        style: { fontSize: 10, fill: '#333333', textAnchor: 'middle' },
                     }}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e9e4db' }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#CCCCCC' }} />
                 <Legend wrapperStyle={LEGEND_STYLE} formatter={legendFormatter} />
                 <ReferenceLine
                     y={FRT_TARGET_MINUTES}
-                    stroke="#c7533e"
+                    stroke="#DC2626"
                     strokeDasharray="4 4"
                     label={{
                         value: `${FRT_TARGET_MINUTES}m target`,
                         position: 'insideTopLeft',
-                        fill: '#c7533e',
+                        fill: '#DC2626',
                         fontSize: 10,
                         fontFamily: "'IBM Plex Mono', monospace",
                     }}

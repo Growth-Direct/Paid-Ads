@@ -1,17 +1,17 @@
 'use client'
 
 import type { BuyerFilters } from '@/lib/buyer/filters'
-import type { OptionGroup } from '@/lib/buyer/options'
+import type { Option, OptionGroup } from '@/lib/buyer/options'
 import { type TimeRange, customRange, fromDateInput, isCustom, toDateInput } from '@/lib/buyer/timePresets'
 import {
     Dropdown,
     MONO,
     NestedList,
-    NestedListSelectAllFooter,
     Pill,
     SectionLabel,
     dateInputStyle,
 } from '@/components/shared/FilterControls'
+import { SearchSelect } from '@/components/shared/SearchSelect'
 import { useEffect, useState } from 'react'
 
 export default function FilterBar({
@@ -19,6 +19,10 @@ export default function FilterBar({
     onChange,
     clusterOptions,
     sourceOptions,
+    campaignOptions,
+    adSetOptions,
+    adOptions,
+    propertyOptions,
     quarters,
     months,
     periods,
@@ -30,6 +34,10 @@ export default function FilterBar({
     onChange: (next: BuyerFilters) => void
     clusterOptions: OptionGroup[]
     sourceOptions: OptionGroup[]
+    campaignOptions: Option[]
+    adSetOptions: Option[]
+    adOptions: Option[]
+    propertyOptions: Option[]
     quarters: TimeRange[]
     months: TimeRange[]
     periods: TimeRange[]
@@ -70,7 +78,14 @@ export default function FilterBar({
         filters.micromarkets.length > 0 ||
         filters.channels.length > 0 ||
         filters.sources.length > 0 ||
+        filters.campaigns.length > 0 ||
+        filters.adSets.length > 0 ||
+        filters.ads.length > 0 ||
+        filters.properties.length > 0 ||
         periods.length > 0
+
+    const attrCount = filters.campaigns.length + filters.adSets.length + filters.ads.length + filters.properties.length
+    const attrSummary = attrCount === 0 ? 'All' : `${attrCount} selected`
 
     const mmSummary =
         filters.micromarkets.length === 0
@@ -96,10 +111,10 @@ export default function FilterBar({
                 position: 'sticky',
                 top: 65,
                 zIndex: 45,
-                background: '#f4f1ea',
+                background: '#FFFFFF',
                 margin: '0 -40px',
                 padding: '14px 40px',
-                borderBottom: '1px solid #e6e0d6',
+                borderBottom: '1px solid #CCCCCC',
             }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Dropdown
@@ -117,9 +132,9 @@ export default function FilterBar({
                                     flex: 1,
                                     padding: '6px 8px',
                                     borderRadius: 6,
-                                    border: `1px solid ${filters.grain === g ? '#3a7d5d' : '#e0dad0'}`,
-                                    background: filters.grain === g ? '#eef4f0' : 'transparent',
-                                    color: filters.grain === g ? '#2f6349' : '#6b655c',
+                                    border: `1px solid ${filters.grain === g ? '#0067FF' : '#CCCCCC'}`,
+                                    background: filters.grain === g ? '#E6F0FF' : 'transparent',
+                                    color: filters.grain === g ? '#0067FF' : '#333333',
                                     fontFamily: MONO,
                                     fontSize: 11,
                                     cursor: 'pointer',
@@ -137,7 +152,7 @@ export default function FilterBar({
                         onChange={(e) => setCustomStart(e.target.value)}
                         style={dateInputStyle}
                     />
-                    <span style={{ color: '#b3ada2', fontSize: 11 }}>to</span>
+                    <span style={{ color: '#666666', fontSize: 11 }}>to</span>
                     <input
                         type="date"
                         value={customEnd}
@@ -159,7 +174,7 @@ export default function FilterBar({
                             padding: '6px 10px',
                             borderRadius: 6,
                             border: 'none',
-                            background: customStart && customEnd && customStart < customEnd ? '#3a7d5d' : '#d8d2c8',
+                            background: customStart && customEnd && customStart < customEnd ? '#0067FF' : '#E5E5E5',
                             color: '#fff',
                             fontFamily: MONO,
                             fontSize: 11,
@@ -194,16 +209,7 @@ export default function FilterBar({
                 </div>
             </Dropdown>
 
-            <Dropdown
-                label="Cluster / MM"
-                summary={mmSummary}
-                active={filters.micromarkets.length > 0}
-                footer={
-                    <NestedListSelectAllFooter
-                        groups={clusterOptions}
-                        onChange={(clusters, micromarkets) => onChange({ ...filters, clusters, micromarkets })}
-                    />
-                }>
+            <Dropdown label="Cluster / MM" summary={mmSummary} active={filters.micromarkets.length > 0}>
                 <NestedList
                     groups={clusterOptions}
                     selectedParents={filters.clusters}
@@ -212,21 +218,34 @@ export default function FilterBar({
                 />
             </Dropdown>
 
-            <Dropdown
-                label="Source"
-                summary={srcSummary}
-                active={filters.sources.length > 0}
-                footer={
-                    <NestedListSelectAllFooter
-                        groups={sourceOptions}
-                        onChange={(channels, sources) => onChange({ ...filters, channels, sources })}
-                    />
-                }>
+            <Dropdown label="Source" summary={srcSummary} active={filters.sources.length > 0}>
                 <NestedList
                     groups={sourceOptions}
                     selectedParents={filters.channels}
                     selectedChildren={filters.sources}
                     onChange={(channels, sources) => onChange({ ...filters, channels, sources })}
+                />
+            </Dropdown>
+
+            <Dropdown label="Attribution" summary={attrSummary} active={attrCount > 0} width={300}>
+                <SearchSelect
+                    label="Campaign"
+                    options={campaignOptions}
+                    selected={filters.campaigns}
+                    onChange={(campaigns) => onChange({ ...filters, campaigns })}
+                />
+                <SearchSelect
+                    label="Ad Set"
+                    options={adSetOptions}
+                    selected={filters.adSets}
+                    onChange={(adSets) => onChange({ ...filters, adSets })}
+                />
+                <SearchSelect label="Ad" options={adOptions} selected={filters.ads} onChange={(ads) => onChange({ ...filters, ads })} />
+                <SearchSelect
+                    label="Property"
+                    options={propertyOptions}
+                    selected={filters.properties}
+                    onChange={(properties) => onChange({ ...filters, properties })}
                 />
             </Dropdown>
 
@@ -240,6 +259,10 @@ export default function FilterBar({
                             micromarkets: [],
                             channels: [],
                             sources: [],
+                            campaigns: [],
+                            adSets: [],
+                            ads: [],
+                            properties: [],
                             grain: 'week',
                         })
                     }}
@@ -248,7 +271,7 @@ export default function FilterBar({
                         borderRadius: 8,
                         border: '1px solid transparent',
                         background: 'transparent',
-                        color: '#9a948a',
+                        color: '#333333',
                         fontFamily: MONO,
                         fontSize: 11.5,
                         cursor: 'pointer',

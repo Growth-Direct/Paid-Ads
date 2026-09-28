@@ -10,7 +10,7 @@ export default function LoginScreen() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#fdfbf6',
+                background: '#FFFFFF',
             }}>
             <img src="/truva-logo-black.svg" alt="Truva" width={40} height={40} style={{ marginBottom: 28 }} />
 
@@ -19,7 +19,7 @@ export default function LoginScreen() {
                     fontSize: 34,
                     fontWeight: 700,
                     letterSpacing: '-0.03em',
-                    color: '#23211e',
+                    color: '#000000',
                     margin: 0,
                 }}>
                 Growth Reporting
@@ -31,7 +31,7 @@ export default function LoginScreen() {
                     fontSize: 11,
                     letterSpacing: '0.14em',
                     textTransform: 'uppercase',
-                    color: '#9a948a',
+                    color: '#333333',
                     margin: '12px 0 44px',
                 }}>
                 Buyer &amp; seller funnel &middot; live from Zoho
@@ -45,8 +45,8 @@ export default function LoginScreen() {
                     gap: 10,
                     padding: '13px 28px',
                     borderRadius: 10,
-                    background: '#23211e',
-                    color: '#fdfbf6',
+                    background: '#0067FF',
+                    color: '#FFFFFF',
                     fontSize: 14,
                     fontWeight: 600,
                     textDecoration: 'none',
@@ -77,7 +77,7 @@ export default function LoginScreen() {
                 style={{
                     fontFamily: MONO,
                     fontSize: 10,
-                    color: '#bdb6aa',
+                    color: '#666666',
                     marginTop: 32,
                     letterSpacing: '0.05em',
                 }}>

@@ -58,19 +58,19 @@ export default function Footer({ cachedAt }: { cachedAt?: string }) {
     return (
         <footer
             style={{
-                borderTop: '1px solid #e9e4db',
+                borderTop: '1px solid #CCCCCC',
                 padding: '16px 40px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: '#f4f1ea',
+                background: '#FFFFFF',
             }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, color: '#b3ada2', fontStyle: 'italic' }}>&ldquo;{q.quote}&rdquo;</span>
+                <span style={{ fontSize: 12, color: '#666666', fontStyle: 'italic' }}>&ldquo;{q.quote}&rdquo;</span>
                 <span
                     style={{
                         fontSize: 11,
-                        color: '#cec8be',
+                        color: '#999999',
                         fontFamily: "'IBM Plex Mono', monospace",
                     }}>
                     — {q.character}
@@ -80,7 +80,7 @@ export default function Footer({ cachedAt }: { cachedAt?: string }) {
                 <span
                     style={{
                         fontSize: 11,
-                        color: '#b3ada2',
+                        color: '#666666',
                         fontFamily: "'IBM Plex Mono', monospace",
                     }}>
                     data refreshed {formatCachedAt(cachedAt)}

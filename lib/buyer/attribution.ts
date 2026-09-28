@@ -18,6 +18,18 @@ export interface RawLsh {
     /** The true touch time. Never Created_Time, which is when the row was written. */
     Timestamp?: string
     Serial_Number?: number | string
+    /** Verified live 2026-09-23 (table-map.md): ~73% filled on first-touch rows — the rest
+     *  is touches with no ad campaign at all (Direct, CP, organic, referral), not missing
+     *  data. */
+    Campaign_Name?: string
+    Ad_Set_Name?: string
+    Ad_Name?: string
+    /** Long, raw property name. Preferred over Property_ID, which is meaningfully less
+     *  complete (58% vs 91% filled, verified live 2026-09-23). */
+    Property_Name?: string
+    /** Lead status AT THE TIME OF THIS ENGAGEMENT, not the lead's current status. 100%
+     *  filled on first-touch rows, verified live 2026-09-23. */
+    Lead_Status?: string
 }
 
 export interface LeadAttribution {
@@ -28,6 +40,14 @@ export interface LeadAttribution {
     /** A valid micromarket, or null when the touch has none or a virtual/junk value. */
     micromarket: string | null
     at: string
+    /** '' when the touch has no ad campaign at all (Direct, CP, organic, referral, ...) —
+     *  a real, expected value, not a data gap. */
+    campaign: string
+    adSet: string
+    ad: string
+    /** '' when the touch's property name is blank. Raw and untrimmed, same as elsewhere in
+     *  this codebase — trim for display. */
+    property: string
 }
 
 function lshLeadId(r: RawLsh): string | null {
@@ -53,6 +73,10 @@ export function resolveFirstTouches(rows: RawLsh[]): Map<string, LeadAttribution
             channel: mapChannel(source),
             micromarket: VALID_MICROMARKETS.has(mmFixed) ? mmFixed : null,
             at,
+            campaign: (r.Campaign_Name ?? '').trim(),
+            adSet: (r.Ad_Set_Name ?? '').trim(),
+            ad: (r.Ad_Name ?? '').trim(),
+            property: (r.Property_Name ?? '').trim(),
         }
 
         const existing = out.get(leadId)

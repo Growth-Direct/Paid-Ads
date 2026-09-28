@@ -1,8 +1,7 @@
 'use client'
 
 import BuyerTab from '@/components/buyer/BuyerTab'
-import { ALL_TQ_STANDINGS, type TqScope } from '@/components/procurement/ProcurementFilters'
-import ProcurementTab from '@/components/procurement/ProcurementTab'
+import BudgetPacingTab from '@/components/budget/BudgetPacingTab'
 import SellerTab from '@/components/seller/SellerTab'
 import Footer from '@/components/shared/Footer'
 import Nav, { type NavView } from '@/components/shared/Nav'
@@ -10,7 +9,6 @@ import type { BuyerFactsResponse } from '@/lib/buyer/aggregate'
 import { quarterEndOfIST, quarterStartOfIST } from '@/lib/buyer/shared'
 import { type TimeRange } from '@/lib/buyer/timePresets'
 import { QUARTER_START_ISO } from '@/lib/buyer/types'
-import type { ProcurementReport } from '@/lib/procurement/types'
 import type { SellerFactsResponse } from '@/lib/seller/aggregate'
 import { useHashState } from '@/lib/useHashState'
 import { useMemo, useState } from 'react'
@@ -69,51 +67,17 @@ export default function Home() {
         keepPreviousData: true,
     })
 
-    // The TQ scope is the one filter that cannot be applied in the browser: a society that is not
-    // Truva-Qualified is absent from growth's response entirely, so widening the scope means
-    // asking growth a different question. `mixed` is not here — a mixed federation is already in
-    // the default response and is filtered client-side.
-    const [tqScope, setTqScope] = useState<TqScope>('tq')
-    const procurementKey =
-        tqScope === 'all'
-            ? `/api/procurement?truvaQualified=${encodeURIComponent(ALL_TQ_STANDINGS.join(','))}`
-            : '/api/procurement'
-
-    // Fetched only while its tab is open, like the seller hook: the request joins the Zoho sync
-    // mirror to truiq through growth and takes seconds, so the buyer tab must not pay for it.
-    // No refreshInterval — procurement moves when a backfill runs, not minute to minute.
-    const procurement = useSWR<ProcurementReport>(
-        activeView === 'procurement' ? procurementKey : null,
-        fetcher,
-        { keepPreviousData: true, revalidateOnFocus: false }
-    )
-
     const cachedAt = activeView === 'seller' ? seller.data?.cachedAt : buyer.data?.cachedAt
 
     return (
         <>
             <Nav activeView={activeView} onViewChange={(v) => setView(v)} />
             <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 40px 60px' }}>
-                {activeView === 'procurement' ? (
-                    procurement.error ? (
-                        <div style={{ color: '#c7533e', fontSize: 13 }}>
-                            Failed to load: {procurement.error.message}
-                        </div>
-                    ) : procurement.isLoading || !procurement.data ? (
-                        <div style={{ color: '#9a948a', fontSize: 13 }}>Loading…</div>
-                    ) : (
-                        <ProcurementTab
-                            report={procurement.data}
-                            loading={procurement.isValidating}
-                            tqScope={tqScope}
-                            onTqScope={setTqScope}
-                        />
-                    )
-                ) : activeView === 'seller' ? (
+                {activeView === 'seller' ? (
                     seller.error ? (
-                        <div style={{ color: '#c7533e', fontSize: 13 }}>Failed to load: {seller.error.message}</div>
+                        <div style={{ color: '#DC2626', fontSize: 13 }}>Failed to load: {seller.error.message}</div>
                     ) : seller.isLoading || !seller.data ? (
-                        <div style={{ color: '#9a948a', fontSize: 13 }}>Loading…</div>
+                        <div style={{ color: '#333333', fontSize: 13 }}>Loading…</div>
                     ) : (
                         <SellerTab
                             response={seller.data}
@@ -123,9 +87,12 @@ export default function Home() {
                         />
                     )
                 ) : buyer.error ? (
-                    <div style={{ color: '#c7533e', fontSize: 13 }}>Failed to load: {buyer.error.message}</div>
+                    <div style={{ color: '#DC2626', fontSize: 13 }}>Failed to load: {buyer.error.message}</div>
                 ) : buyer.isLoading || !buyer.data ? (
-                    <div style={{ color: '#9a948a', fontSize: 13 }}>Loading…</div>
+                    <div style={{ color: '#333333', fontSize: 13 }}>Loading…</div>
+                ) : activeView === 'budget' ? (
+                    // Reuses the already-fetched Buyer facts — no new Zoho fetch, no new API route.
+                    <BudgetPacingTab response={buyer.data} />
                 ) : (
                     <BuyerTab
                         response={buyer.data}

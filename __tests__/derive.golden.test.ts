@@ -1,15 +1,26 @@
-import type { BidSourceFact, BuyerFacts, SoldBidFact, VisitSplitFact, ConversionFact, HouseFact, LeadFact, SpendFact, VisitFact } from '@/lib/buyer/facts'
+import type { BidSourceFact, BuyerFacts, SoldBidFact, VisitSplitFact, ConversionFact, HouseFact, LeadFact, LshTouchFact, SpendFact, VisitFact } from '@/lib/buyer/facts'
 import { EMPTY_FILTERS } from '@/lib/buyer/filters'
 import { mondayOfIST, sourceLabel } from '@/lib/buyer/shared'
 import { deriveReport } from '@/lib/buyer/derive'
 import { describe, expect, it } from 'vitest'
 
-// Characterisation test for the twelve existing cards. Written BEFORE LeadFact gains its
+// Characterisation test for the twelve original cards. Written BEFORE LeadFact gains its
 // LSH attribution fields, so the snapshot captures pre-widening behaviour. deriveReport
-// must keep producing byte-identical output after the fields are added and after the
-// bucketing block is extracted to shared.ts. If it changes, the refactor leaked.
+// must keep producing byte-identical output for those twelve after the fields are added
+// and after the bucketing block is extracted to shared.ts. If ANY of the twelve changes,
+// the refactor leaked.
 //
 // derive.ts is reconciled against Metabase and had no coverage; this is also that.
+//
+// 2026-09-23: the snapshot below gained eleven NEW keys (leadsByCampaign/AdSet/Ad/Property/
+// Micromarket and their qualifiedBy* counterparts, plus lshExtraByDimension) — a deliberate
+// extension, not a leak. They're computed in derive.ts's own separate loops, reading
+// LeadFact's attributedCampaign/attributedAdSet/attributedAd/attributedProperty and
+// facts.lshTouches's own campaign/adSet/ad/property/micromarket/leadStatus fields, which
+// this fixture otherwise leaves at their empty defaults so nothing here accidentally
+// exercises real attribution data. The point of this file is that every ORIGINAL twelve
+// key stays byte-identical — check any future diff against exactly that, not against the
+// eleven new keys existing at all.
 
 const ISO = (m: number, d: number, h = 9) =>
     `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:00:00+05:30`
@@ -48,13 +59,19 @@ function lead(p: Partial<LeadFact> & { createdAt: string }): LeadFact {
         isPrimary: p.isPrimary ?? true,
         inPopulation: p.inPopulation ?? true,
         inPipeline: p.inPipeline ?? false,
-        // Attribution fields exist but derive.ts must never read them — left at their
-        // empty defaults so the snapshot proves derive ignores them.
+        // Attribution fields exist but the ORIGINAL twelve cards below must never read
+        // them — left at their empty defaults so the snapshot proves derive ignores them
+        // for those twelve. The five NEW attributedCampaign/etc.-driven cards (added
+        // 2026-09-23) are exercised separately in derive.newAttribution.test.ts.
         attributedSource: p.attributedSource ?? '',
         attributedChannel: p.attributedChannel ?? null,
         attributedMicromarket: p.attributedMicromarket ?? null,
         attributedAt: p.attributedAt ?? null,
         hasAttribution: p.hasAttribution ?? false,
+        attributedCampaign: p.attributedCampaign ?? '',
+        attributedAdSet: p.attributedAdSet ?? '',
+        attributedAd: p.attributedAd ?? '',
+        attributedProperty: p.attributedProperty ?? '',
     }
 }
 
@@ -121,16 +138,20 @@ const houses: HouseFact[] = [
     { house: '303 - Bangalore Test', clusters: ['Unknown'], uniqueVisits: 3, everWarmYes: 0 },
 ]
 
+function touch(leadId: string, timestamp: string): LshTouchFact {
+    return { leadId, timestamp, campaign: '', adSet: '', ad: '', property: '', micromarket: '', leadStatus: '' }
+}
+
 const lshTouches = [
     // L1 re-enquires: two touches, one lead -> proves raw counts every touch
-    { leadId: 'L1', timestamp: ISO(7, 1) },
-    { leadId: 'L1', timestamp: ISO(7, 15) },
-    { leadId: 'L3', timestamp: ISO(7, 7) },
+    touch('L1', ISO(7, 1)),
+    touch('L1', ISO(7, 15)),
+    touch('L3', ISO(7, 7)),
     // OLD1 (not in population) re-enquires inside the quarter: still a real touch this
     // quarter, windowed on the touch's own Timestamp, not the lead's Created_Time
-    { leadId: 'OLD1', timestamp: ISO(8, 1) },
+    touch('OLD1', ISO(8, 1)),
     // Outside the quarter -> must not be counted
-    { leadId: 'L1', timestamp: ISO(3, 1) },
+    touch('L1', ISO(3, 1)),
 ]
 
 // Properties sold, unfiltered — D1/D2 mirror the two conversions above; CP1 is a
@@ -138,10 +159,10 @@ const lshTouches = [
 // appears ONLY here (that is the whole point of this array). BL1 took a blocking but has
 // not signed an MoU.
 const soldBids: SoldBidFact[] = [
-    { dealId: 'D1', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' },
-    { dealId: 'D2', soldAt: ISO(8, 2), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' },
-    { dealId: 'CP1', soldAt: ISO(8, 4), viaBlocking: false, isChannelPartner: true, clusters: ['PAV'], micromarkets: ['Powai'], channel: null, rawSource: 'Channel Partner', sourceLabel: 'Channel Partner' },
-    { dealId: 'BL1', soldAt: ISO(8, 6), viaBlocking: true, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' },
+    { dealId: 'D1', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
+    { dealId: 'D2', soldAt: ISO(8, 2), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
+    { dealId: 'CP1', soldAt: ISO(8, 4), viaBlocking: false, isChannelPartner: true, clusters: ['PAV'], micromarkets: ['Powai'], channel: null, rawSource: 'Channel Partner', sourceLabel: 'Channel Partner', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
+    { dealId: 'BL1', soldAt: ISO(8, 6), viaBlocking: true, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
 ]
 
 // Visit events split by the BID's source. CP1's bid belongs to a lead outside the population
@@ -314,8 +335,8 @@ describe('deriveReport golden', () => {
         // But as of 2026-09-16 the tile IS filter-aware: filtering to a channel the buyer
         // isn't in drops the sale, rather than the tile staying stubbornly company-wide.
         const twoToOneBuyer: SoldBidFact[] = [
-            { dealId: 'X1', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' },
-            { dealId: 'X2', soldAt: ISO(8, 2), viaBlocking: true, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' },
+            { dealId: 'X1', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
+            { dealId: 'X2', soldAt: ISO(8, 2), viaBlocking: true, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
         ]
         const tile = (f: typeof EMPTY_FILTERS) =>
             deriveReport({ ...facts, soldBids: twoToOneBuyer }, { ...opts, filters: f }).overallFunnel.blocks.find(
@@ -334,7 +355,7 @@ describe('deriveReport golden', () => {
         // still count when nothing is selected — otherwise the tile stops being a true
         // "everything we sold" total, which is the whole reason it exists.
         const cpOnly: SoldBidFact[] = [
-            { dealId: 'CP9', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: true, clusters: ['PAV'], micromarkets: ['Powai'], channel: null, rawSource: 'Channel Partner', sourceLabel: 'Channel Partner' },
+            { dealId: 'CP9', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: true, clusters: ['PAV'], micromarkets: ['Powai'], channel: null, rawSource: 'Channel Partner', sourceLabel: 'Channel Partner', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
         ]
         const tile = (f: typeof EMPTY_FILTERS) =>
             deriveReport({ ...facts, soldBids: cpOnly }, { ...opts, filters: f }).overallFunnel.blocks.find(
@@ -347,8 +368,8 @@ describe('deriveReport golden', () => {
 
     it('Total Conversions windows on the sale date (MoU or blocking)', () => {
         const outOfWindow: SoldBidFact[] = [
-            { dealId: 'Y1', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' },
-            { dealId: 'Y2', soldAt: ISO(3, 1), viaBlocking: true, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta' }, // before the quarter
+            { dealId: 'Y1', soldAt: ISO(8, 1), viaBlocking: false, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' },
+            { dealId: 'Y2', soldAt: ISO(3, 1), viaBlocking: true, isChannelPartner: false, clusters: ['PAV'], micromarkets: ['Powai'], channel: 'Paid Ads', rawSource: 'Meta', sourceLabel: 'Meta', attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '' }, // before the quarter
         ]
         const windowed = deriveReport({ ...facts, soldBids: outOfWindow }, opts)
         expect(windowed.overallFunnel.blocks.find((b) => b.label === 'Total Conversions')!.actual).toBe(1)

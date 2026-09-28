@@ -12,11 +12,11 @@ import type { OverallFunnelData } from '@/lib/buyer/types'
 // never overflows — the bug the old inline-flex row had.
 
 const MONO = "'IBM Plex Mono', monospace"
-const GREEN = '#3a7d5d'
-const RED = '#c7533e'
-const MUTED = '#9a948a'
-const INK = '#3a3630'
-const RIBBON = '#3a7d5d'
+const GREEN = '#16A34A'
+const RED = '#DC2626'
+const MUTED = '#333333'
+const INK = '#000000'
+const RIBBON = '#16A34A'
 
 const VBW = 1160
 const VBH = 300
@@ -147,6 +147,11 @@ export default function OverallFunnel({ data, expectedPct }: { data: OverallFunn
 
             {/* float-above context nodes */}
             <FloatNode cx={XS[0]!} cy={62} title="Total Leads" value={totalLeads.actual} sub="all touches" />
+            {/* Small comparison box beside Total Leads — same touch table (Lead_Source_History),
+                restricted to touches whose status AT THAT TOUCH is Qualified. EXTRA CONTEXT, not
+                a funnel stage, so it's styled distinctly (accent-blue) rather than as a spine or
+                float node. */}
+            <SmallBox cx={XS[0]! + 135} cy={62} title="Qualified (LSH)" value={data.lshQualifiedLeads} />
             <FloatNode cx={XS[2]!} cy={62} title="Total Visits" value={totalVisits.actual} sub="all events" />
             <FloatNode cx={XS[3]!} cy={62} title="Total Conversions" value={totalConversions.actual} sub="all sources + blocking" />
 
@@ -185,8 +190,8 @@ export default function OverallFunnel({ data, expectedPct }: { data: OverallFunn
                             width={NODE_W}
                             height={NODE_H}
                             rx={13}
-                            fill="#fbf9f4"
-                            stroke={delta == null ? '#e0dad0' : status}
+                            fill="#FFFFFF"
+                            stroke={delta == null ? '#CCCCCC' : status}
                             strokeOpacity={delta == null ? 1 : 0.45}
                             strokeWidth={1.4}
                         />
@@ -235,7 +240,7 @@ function FloatNode({ cx, cy, title, value, sub }: { cx: number; cy: number; titl
     const y = cy - h / 2
     return (
         <g>
-            <rect x={x} y={y} width={w} height={h} rx={11} fill="#f4efe7" stroke="#e6e0d5" strokeWidth={1} />
+            <rect x={x} y={y} width={w} height={h} rx={11} fill="#F5F5F5" stroke="#CCCCCC" strokeWidth={1} />
             <text x={cx} y={y + 17} textAnchor="middle" fontSize={9} fill={MUTED} letterSpacing="0.06em">
                 {title.toUpperCase()}
             </text>
@@ -244,6 +249,26 @@ function FloatNode({ cx, cy, title, value, sub }: { cx: number; cy: number; titl
             </text>
             <text x={cx} y={y + 50} textAnchor="middle" fontSize={8.5} fill={MUTED}>
                 {sub}
+            </text>
+        </g>
+    )
+}
+
+/** A small, accent-tinted comparison box — distinct from FloatNode's neutral styling since
+ *  this is EXTRA CONTEXT (a Lead_Source_History reading), not a funnel measurement. */
+function SmallBox({ cx, cy, title, value }: { cx: number; cy: number; title: string; value: number | null }) {
+    const w = 104
+    const h = 46
+    const x = cx - w / 2
+    const y = cy - h / 2
+    return (
+        <g>
+            <rect x={x} y={y} width={w} height={h} rx={9} fill="#E6F0FF" stroke="#0067FF" strokeOpacity={0.4} strokeWidth={1} />
+            <text x={cx} y={y + 15} textAnchor="middle" fontSize={7.5} fill={MUTED} letterSpacing="0.05em">
+                {title.toUpperCase()}
+            </text>
+            <text x={cx} y={y + 33} textAnchor="middle" fontSize={16} fontWeight={800} fill={INK}>
+                {n(value)}
             </text>
         </g>
     )
@@ -263,7 +288,7 @@ function FloatLink({ x, topY, label }: { x: number; topY: number; label: { unit:
             />
             {label?.achieved != null && (
                 <>
-                    <rect x={x + 6} y={(topY + y2) / 2 - 10} width={58} height={18} rx={9} fill="#fbf9f4" stroke="#e6e0d5" />
+                    <rect x={x + 6} y={(topY + y2) / 2 - 10} width={58} height={18} rx={9} fill="#FFFFFF" stroke="#CCCCCC" />
                     <text x={x + 35} y={(topY + y2) / 2 + 3} textAnchor="middle" fontSize={11} fontWeight={700} fill={INK}>
                         {pctLabel(label.achieved, label.unit)}
                     </text>

@@ -24,26 +24,11 @@ export const dateInputStyle: React.CSSProperties = {
     minWidth: 0,
     padding: '5px 6px',
     borderRadius: 6,
-    border: '1px solid #e0dad0',
+    border: '1px solid #CCCCCC',
     background: '#fff',
     fontFamily: MONO,
     fontSize: 11,
-    color: '#3a3630',
-}
-
-// A plain (non-toggle) action button for a Dropdown's footer — Select all / Deselect all use
-// this, same visual weight as the Time dropdown's "by week/month" buttons but without an
-// active/inactive state, since these are one-shot actions, not persistent modes.
-const FOOTER_ACTION_BTN: React.CSSProperties = {
-    flex: 1,
-    padding: '5px 8px',
-    borderRadius: 6,
-    border: '1px solid #e0dad0',
-    background: 'transparent',
-    color: '#6b655c',
-    fontFamily: MONO,
-    fontSize: 10.5,
-    cursor: 'pointer',
+    color: '#000000',
 }
 
 function Chevron() {
@@ -96,9 +81,9 @@ export function Dropdown({
                     gap: 8,
                     padding: '7px 11px',
                     borderRadius: 8,
-                    border: `1px solid ${active ? '#3a7d5d' : '#e0dad0'}`,
-                    background: active ? '#eef4f0' : '#fbf9f4',
-                    color: active ? '#2f6349' : '#6b655c',
+                    border: `1px solid ${active ? '#0067FF' : '#CCCCCC'}`,
+                    background: active ? '#E6F0FF' : '#FFFFFF',
+                    color: active ? '#0067FF' : '#333333',
                     fontFamily: MONO,
                     fontSize: 11.5,
                     cursor: 'pointer',
@@ -117,8 +102,8 @@ export function Dropdown({
                         zIndex: 40,
                         width,
                         maxWidth: '92vw',
-                        background: '#fbf9f4',
-                        border: '1px solid #e0dad0',
+                        background: '#FFFFFF',
+                        border: '1px solid #CCCCCC',
                         borderRadius: 10,
                         boxShadow: '0 8px 28px rgba(0,0,0,0.10)',
                         display: 'flex',
@@ -128,7 +113,7 @@ export function Dropdown({
                     }}>
                     <div style={{ overflowY: 'auto', padding: 8, flex: 1, minHeight: 0 }}>{children}</div>
                     {footer && (
-                        <div style={{ borderTop: '1px solid #eee7dc', padding: 8, background: '#fbf9f4', flexShrink: 0 }}>
+                        <div style={{ borderTop: '1px solid #CCCCCC', padding: 8, background: '#FFFFFF', flexShrink: 0 }}>
                             {footer}
                         </div>
                     )}
@@ -169,12 +154,12 @@ export function Row({
                 cursor: 'pointer',
                 fontFamily: MONO,
                 fontSize: 11.5,
-                color: bold ? '#3a3630' : '#6b655c',
+                color: bold ? '#000000' : '#333333',
                 fontWeight: bold ? 500 : 400,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#f2ede4')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#F5F5F5')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-            <input ref={box} type="checkbox" checked={checked} onChange={onToggle} style={{ accentColor: '#3a7d5d' }} />
+            <input ref={box} type="checkbox" checked={checked} onChange={onToggle} style={{ accentColor: '#0067FF' }} />
             <span style={{ flex: 1 }}>{label}</span>
         </label>
     )
@@ -244,52 +229,6 @@ export function NestedList({
     )
 }
 
-/** A NestedList's "Select all" / "Deselect all" — one click selects every parent AND every
- *  child at once (or clears both), instead of clicking each row individually. Pass as a
- *  Dropdown's `footer` alongside a NestedList child, same footer-button treatment used
- *  elsewhere (e.g. the Time dropdown's "by week/month" buttons). */
-export function NestedListSelectAllFooter({
-    groups,
-    onChange,
-}: {
-    groups: OptionGroup[]
-    onChange: (parents: string[], children: string[]) => void
-}) {
-    const allParents = groups.map((g) => g.id)
-    const allChildren = groups.flatMap((g) => g.children.map((c) => c.id))
-    return (
-        <div style={{ display: 'flex', gap: 6 }}>
-            <button style={FOOTER_ACTION_BTN} onClick={() => onChange(allParents, allChildren)}>
-                Select all
-            </button>
-            <button style={FOOTER_ACTION_BTN} onClick={() => onChange([], [])}>
-                Deselect all
-            </button>
-        </div>
-    )
-}
-
-/** Same "Select all" / "Deselect all" as above, for a flat (non-nested) checklist — e.g. the
- *  Seller Visits/Conversions New+Old scope pickers. */
-export function FlatSelectAllFooter({
-    options,
-    onChange,
-}: {
-    options: readonly string[]
-    onChange: (selected: string[]) => void
-}) {
-    return (
-        <div style={{ display: 'flex', gap: 6 }}>
-            <button style={FOOTER_ACTION_BTN} onClick={() => onChange([...options])}>
-                Select all
-            </button>
-            <button style={FOOTER_ACTION_BTN} onClick={() => onChange([])}>
-                Deselect all
-            </button>
-        </div>
-    )
-}
-
 export function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
     return (
         <button
@@ -297,9 +236,9 @@ export function Pill({ label, selected, onClick }: { label: string; selected: bo
             style={{
                 padding: '5px 10px',
                 borderRadius: 999,
-                border: `1px solid ${selected ? '#3a7d5d' : '#e0dad0'}`,
-                background: selected ? '#3a7d5d' : '#fbf9f4',
-                color: selected ? '#fff' : '#6b655c',
+                border: `1px solid ${selected ? '#0067FF' : '#CCCCCC'}`,
+                background: selected ? '#0067FF' : '#FFFFFF',
+                color: selected ? '#fff' : '#333333',
                 fontFamily: MONO,
                 fontSize: 11,
                 cursor: 'pointer',
@@ -319,7 +258,7 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
                 fontSize: 9.5,
                 letterSpacing: '0.09em',
                 textTransform: 'uppercase',
-                color: '#b3ada2',
+                color: '#666666',
             }}>
             {children}
         </div>

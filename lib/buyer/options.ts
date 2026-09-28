@@ -1,5 +1,5 @@
-import type { BuyerFacts } from './facts'
-import { CLUSTER_TREE, VALID_CLUSTERS } from './shared'
+import type { BuyerFacts, LeadFact } from './facts'
+import { ATTRIBUTION_NOT_APPLICABLE, ATTRIBUTION_UNMAPPED_PROPERTY, CLUSTER_TREE, VALID_CLUSTERS } from './shared'
 import { CHANNELS } from './types'
 
 // Filter options carry no counts. A count here would be computed over the loaded window
@@ -46,4 +46,34 @@ export function buildSourceOptions(facts: BuyerFacts): OptionGroup[] {
             .sort((a, b) => a.localeCompare(b))
             .map((raw) => ({ id: raw.toLowerCase(), label: raw })),
     }))
+}
+
+// Added 2026-09-23, for the Campaign/Ad Set/Ad/Property filter dropdowns. Flat lists, not
+// grouped like Cluster/Source — there's no natural two-level grouping for a search box.
+// `id` is the raw attributed value itself (not lowercased) since that's exactly what
+// `lead.attributedCampaign`/etc. stores and what filters.ts compares against — unlike
+// Source, whose `sources` filter deliberately lowercases.
+function buildFlatOptions(facts: BuyerFacts, pick: (l: LeadFact) => string, blankLabel: string): Option[] {
+    const values = new Set<string>()
+    for (const l of facts.leads) {
+        if (!l.inPopulation) continue
+        values.add(pick(l) || blankLabel)
+    }
+    return [...values].sort((a, b) => a.localeCompare(b)).map((v) => ({ id: v, label: v }))
+}
+
+export function buildCampaignOptions(facts: BuyerFacts): Option[] {
+    return buildFlatOptions(facts, (l) => l.attributedCampaign, ATTRIBUTION_NOT_APPLICABLE)
+}
+
+export function buildAdSetOptions(facts: BuyerFacts): Option[] {
+    return buildFlatOptions(facts, (l) => l.attributedAdSet, ATTRIBUTION_NOT_APPLICABLE)
+}
+
+export function buildAdOptions(facts: BuyerFacts): Option[] {
+    return buildFlatOptions(facts, (l) => l.attributedAd, ATTRIBUTION_NOT_APPLICABLE)
+}
+
+export function buildPropertyOptions(facts: BuyerFacts): Option[] {
+    return buildFlatOptions(facts, (l) => l.attributedProperty, ATTRIBUTION_UNMAPPED_PROPERTY)
 }

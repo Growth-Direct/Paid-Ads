@@ -62,7 +62,7 @@ export default function NextActionables() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {ACTIONABLE_CHANNELS.map((channel) => (
                     <div key={channel} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 240, flexShrink: 0, fontSize: 12, color: '#6b655c', ...MONO }}>{channel}</div>
+                        <div style={{ width: 240, flexShrink: 0, fontSize: 12, color: '#333333', ...MONO }}>{channel}</div>
                         <input
                             type="text"
                             value={byChannel[channel] ?? ''}
@@ -73,9 +73,9 @@ export default function NextActionables() {
                                 flex: 1,
                                 padding: '7px 10px',
                                 fontSize: 13,
-                                color: '#3a3630',
+                                color: '#000000',
                                 background: '#fff',
-                                border: '1px solid #e9e4db',
+                                border: '1px solid #CCCCCC',
                                 borderRadius: 6,
                                 ...MONO,
                             }}
@@ -91,8 +91,8 @@ export default function NextActionables() {
                         padding: '6px 16px',
                         fontSize: 12.5,
                         fontWeight: 600,
-                        color: dirty ? '#fbf9f4' : '#9a948a',
-                        background: dirty ? '#3a7d5d' : '#efe9e0',
+                        color: dirty ? '#FFFFFF' : '#333333',
+                        background: dirty ? '#0067FF' : '#F5F5F5',
                         border: 'none',
                         borderRadius: 6,
                         cursor: dirty && status !== 'saving' ? 'pointer' : 'default',
@@ -100,7 +100,7 @@ export default function NextActionables() {
                     }}>
                     {status === 'saving' ? 'Saving…' : 'Save'}
                 </button>
-                <span style={{ fontSize: 11.5, color: status === 'error' ? '#c7533e' : '#9a948a', ...MONO }}>
+                <span style={{ fontSize: 11.5, color: status === 'error' ? '#DC2626' : '#333333', ...MONO }}>
                     {status === 'error'
                         ? 'Could not save — try again'
                         : dirty

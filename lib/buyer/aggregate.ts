@@ -1,4 +1,4 @@
-import { type CrmFilter, fetchRecordsByIds, queryRecords } from '@/lib/crm'
+import { executeCOQL, fetchRecords, fetchRecordsByIds } from '@/lib/zoho'
 import type { LeadAttribution } from './attribution'
 import { fetchAllTouches, fetchFirstTouches } from './lsh'
 import { loadSpend } from './spend/source'
@@ -19,6 +19,7 @@ import {
     fixMicromarket,
     fixMicromarkets,
     foldStatus,
+    isEligibleChannel,
     isVcv,
     isVirtualMicromarket,
     mapChannel,
@@ -234,101 +235,62 @@ const BLOCKING_COLLAPSED_STAGES = new Set(['Closed - Rejected', 'Cancelled'])
 /** Fetches the window from Zoho and returns the fact table. Exported so the filter
  *  work can reuse it without going through the report shape. */
 export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promise<BuyerFacts> {
-    // Read from growth's copy of the Zoho mirror (lib/crm.ts), with the same filters the COQL
-    // reads had. The shapes of the reads below — Deals never fetched broadly, only the
-    // window-relevant slices plus whatever bids the window's visit Events reference, and windows
-    // wider than a quarter fetched a slice at a time — were forced by COQL's 10,000-row cap. The
-    // mirror has no such cap, but they are kept as they were so the numbers cannot move.
-    const createdIn = (a: Date, b: Date): CrmFilter[] => [
-        { field: 'Created_Time', op: 'gte', value: toZohoDateTime(a) },
-        { field: 'Created_Time', op: 'lt', value: toZohoDateTime(b) },
-    ]
-    const leadFields = [
-        'id',
-        'Full_Name',
-        'Lead_Status',
-        'Lead_Source',
-        'Created_Time',
-        'Truva_Cluster',
-        'UTM_Micromarket',
-        'Not_Qualified_Reason',
-        'EE_Response_Time',
-        'UTM_Channel',
-        'Acefone_Lead_ID',
-        'Phone',
-        'Mobile',
-    ]
-    const leadsQ = (a: Date, b: Date) => queryRecords('Leads', leadFields, createdIn(a, b))
+    // COQL hard-caps any single query at 10,000 rows with no way around it via paging,
+    // so Deals (~10.9k total, over the cap) is never fetched broadly — only the two
+    // window-relevant slices, plus whatever bids the window's visit Events reference.
+    const leadsQ = (a: Date, b: Date) =>
+        `SELECT id, Full_Name, Lead_Status, Lead_Source, Created_Time, Truva_Cluster, UTM_Micromarket, Not_Qualified_Reason, EE_Response_Time, UTM_Channel, Acefone_Lead_ID, Phone, Mobile FROM Leads WHERE Created_Time >= '${toZohoDateTime(a)}' AND Created_Time < '${toZohoDateTime(b)}'`
     const eventsQ = (a: Date, b: Date) =>
-        queryRecords('Events', ['id', 'What_Id', 'Module', 'Start_DateTime', 'Truva_Micromarket'], [
-            { field: 'Module', op: 'eq', value: 'Bid' },
-            { field: 'Start_DateTime', op: 'between', value: [toZohoDateTime(a), toZohoDateTime(b)] },
-        ])
+        `SELECT id, What_Id, Module, Start_DateTime, Truva_Micromarket FROM Events WHERE Module = 'Bid' AND Start_DateTime between '${toZohoDateTime(a)}' and '${toZohoDateTime(b)}'`
     // Lead_Source on Deals is the BID's source and drives the Channel Partner exclusion.
     // It has to be on all three Deal fetches below — missing one leaves CP bids in play
     // through whichever path skipped it. Products (the property this bid is on) rides along on
     // the same three fetches for the same reason — missing it on any path leaves that path's
     // visits without a property, falling into the 'Unknown' bucket unnecessarily.
-    const warmDealsQ = () =>
-        queryRecords('Deals', ['id', 'Lead', 'Was_Bid_Warm', 'Lead_Source', 'Products'], [
-            { field: 'Was_Bid_Warm', op: 'eq', value: true },
-        ])
-    const wonDealsQ = () =>
-        queryRecords('Deals', ['id', 'Lead', 'Stage', 'Buyer_MoU_Signing_Date', 'Lead_Source', 'Products'], [
-            { field: 'Stage', op: 'eq', value: 'Closed - Won' },
-            {
-                field: 'Buyer_MoU_Signing_Date',
-                op: 'between',
-                value: [toZohoDateTime(windowStart).slice(0, 10), toZohoDateTime(windowEnd).slice(0, 10)],
-            },
-        ])
+    const warmDealsQ = `SELECT id, Lead, Was_Bid_Warm, Lead_Source, Products FROM Deals WHERE Was_Bid_Warm = true`
+    const wonDealsQ = `SELECT id, Lead, Stage, Buyer_MoU_Signing_Date, Lead_Source, Products FROM Deals WHERE Stage = 'Closed - Won' AND Buyer_MoU_Signing_Date between '${toZohoDateTime(windowStart).slice(0, 10)}' and '${toZohoDateTime(windowEnd).slice(0, 10)}'`
     // Every bid created in the window, Channel-Partner-sourced ones included — none of the
     // three Deal fetches above cover this (they're purpose-built subsets: warm all-time, won
     // in-window, visit-linked), and the Direct % of Bids row needs the true company-wide total,
-    // not one of those slices. It rides the same slices/window as leadsQ.
+    // not one of those slices. A quarter's worth of bids (~1,300-1,400, per CLAUDE.md's ~10,933
+    // over 24 months) comfortably fits the 10,000-row COQL cap, so this rides the same
+    // slices/window as leadsQ rather than needing its own cap workaround.
     const bidSourcesQ = (a: Date, b: Date) =>
-        queryRecords('Deals', ['id', 'Lead_Source', 'Created_Time'], createdIn(a, b))
+        `SELECT id, Lead_Source, Created_Time FROM Deals WHERE Created_Time >= '${toZohoDateTime(a)}' AND Created_Time < '${toZohoDateTime(b)}'`
     // Bids where a blocking amount was received in the window. A blocking comes BEFORE the
     // MoU in Truva's buyer journey, so these are NOT a subset of wonDealsQ above — a bid can
     // be blocked this quarter and sign its MoU in the next one (or never). Verified live
     // 2026-09-16: 32 in JAS 2026, of which 16 are not Closed-Won-in-window.
     // Blocking_received_date is a datetime (values carry an IST offset), unlike
     // Buyer_MoU_Signing_Date which is a plain date — hence the full toZohoDateTime here
-    // against the .slice(0, 10) above. Inclusive at both ends, as the COQL BETWEEN was.
-    const blockingDealsQ = () =>
-        queryRecords(
-            'Deals',
-            ['id', 'Lead', 'Stage', 'Blocking_received_date', 'Buyer_MoU_Signing_Date', 'Lead_Source'],
-            [
-                {
-                    field: 'Blocking_received_date',
-                    op: 'between',
-                    value: [toZohoDateTime(windowStart), toZohoDateTime(windowEnd)],
-                },
-            ]
-        )
+    // against the .slice(0, 10) above. BETWEEN, not >=/<: COQL rejects two-sided ranges on
+    // Deals with a misleading "SYNTAX_ERROR near where".
+    const blockingDealsQ = `SELECT id, Lead, Stage, Blocking_received_date, Buyer_MoU_Signing_Date, Lead_Source FROM Deals WHERE Blocking_received_date between '${toZohoDateTime(windowStart)}' and '${toZohoDateTime(windowEnd)}'`
 
-    // Sequential, as the COQL reads had to be (concurrent COQL calls came back with a spurious
-    // "SYNTAX_ERROR near where"). Kept sequential so the order of reads, and so of any partial
-    // failure, is unchanged.
+    // Sequential, not Promise.all — concurrent COQL calls against the same token were
+    // intermittently coming back with a spurious "SYNTAX_ERROR near where" on whichever
+    // query landed second or third, not a real syntax problem. Slower but reliable.
+    // COQL caps a single query at 10,000 rows including the offset, and paging cannot
+    // step past it, so a window wider than about a quarter is fetched a month at a time.
+    // Sequentially, like everything else here.
     const slices = fetchSlices(windowStart, windowEnd)
     const windowLeads: RawLead[] = []
     for (const [a, b] of slices) {
-        const page = (await leadsQ(a, b).catch((e) => {
+        const page = (await executeCOQL(leadsQ(a, b)).catch((e) => {
             throw new Error(`leadsQ failed for ${a.toISOString()}: ${e.message}`)
         })) as RawLead[]
         windowLeads.push(...page)
     }
-    const warmDeals = (await warmDealsQ().catch((e) => {
+    const warmDeals = (await executeCOQL(warmDealsQ).catch((e) => {
         throw new Error(`warmDealsQ failed: ${e.message}`)
     })) as RawDeal[]
-    const wonDeals = (await wonDealsQ().catch((e) => {
+    const wonDeals = (await executeCOQL(wonDealsQ).catch((e) => {
         throw new Error(`wonDealsQ failed: ${e.message}`)
     })) as RawDeal[]
     // Additive: only the Overall Funnel's "Total Conversions" tile reads these. Degrades to
     // an empty list (tile falls back to MoU-signed sales alone) rather than failing the whole
     // report, same treatment as the other additive fetches here.
-    const blockingDeals = (await blockingDealsQ().catch((e) => {
+    const blockingDeals = (await executeCOQL(blockingDealsQ).catch((e) => {
         console.error('[aggregate] blockingDealsQ failed, Total Conversions falls back to MoU-only:', e)
         return [] as RawDeal[]
     })) as RawDeal[]
@@ -357,7 +319,7 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
     const bidSources: BidSourceFact[] = []
     try {
         for (const [a, b] of slices) {
-            const page = (await bidSourcesQ(a, b)) as RawBidSource[]
+            const page = (await executeCOQL(bidSourcesQ(a, b))) as RawBidSource[]
             for (const d of page) {
                 bidSources.push({ dealId: d.id, leadSource: d.Lead_Source ?? null, createdAt: d.Created_Time ?? '' })
             }
@@ -368,17 +330,17 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
     }
     const windowEvents: RawEvent[] = []
     for (const [a, b] of slices) {
-        const page = (await eventsQ(a, b).catch((e) => {
+        const page = (await executeCOQL(eventsQ(a, b)).catch((e) => {
             throw new Error(`eventsQ failed for ${a.toISOString()}: ${e.message}`)
         })) as RawEvent[]
         windowEvents.push(...page)
     }
-    const liveProducts = (await queryRecords(
+    const liveProducts = (await fetchRecords(
         'Products',
         ['id', 'Product_Name', 'Status', 'Truva_Cluster', 'Unique_visits_Direct', 'Active_warm_bids_Direct'],
-        [{ field: 'Status', op: 'eq', value: 'Live' }]
+        `(Status:equals:Live)`
     )) as RawProduct[]
-    const pipelineLeadsRaw = (await queryRecords(
+    const pipelineLeadsRaw = (await fetchRecords(
         'Leads',
         [
             'id',
@@ -391,7 +353,7 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
             'Phone',
             'Mobile',
         ],
-        [{ field: 'Lead_Status', op: 'in', value: [...VISIT_PIPELINE_STATUSES] }]
+        `((Lead_Status:equals:${VISIT_PIPELINE_STATUSES[0]})OR(Lead_Status:equals:${VISIT_PIPELINE_STATUSES[1]}))`
     )) as RawLead[]
 
     // Every Bid-module event's deal is needed up front now — completion is read off the
@@ -457,9 +419,11 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
         for (const l of patched) rawLeadById.set(l.id, l)
     }
 
-    // --- eligibility: VCV test cluster, and sources outside the DRR population ---
+    // --- eligibility: VCV test cluster, sources outside the DRR population, and (added
+    // 2026-09-23, see metric-definitions.md's fifth buyer population rule) channels other
+    // than Paid Ads/3P ---
     const eligible = (l: RawLead | undefined): l is RawLead =>
-        !!l && !isVcv(l.Truva_Cluster) && mapChannel(l.Lead_Source) !== null
+        !!l && !isVcv(l.Truva_Cluster) && isEligibleChannel(mapChannel(l.Lead_Source))
 
     const warmLeadIds = new Set<string>()
     for (const d of allDeals) {
@@ -540,6 +504,10 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
             attributedMicromarket: firstTouches.get(l.id)?.micromarket ?? null,
             attributedAt: firstTouches.get(l.id)?.at ?? null,
             hasAttribution: firstTouches.has(l.id),
+            attributedCampaign: firstTouches.get(l.id)?.campaign ?? '',
+            attributedAdSet: firstTouches.get(l.id)?.adSet ?? '',
+            attributedAd: firstTouches.get(l.id)?.ad ?? '',
+            attributedProperty: firstTouches.get(l.id)?.property ?? '',
         })
     }
     // One person is one phone, not one Zoho record. Runs here, after every exclusion above.
@@ -591,10 +559,16 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
     // applies is deliberately NOT repeated: first touches are fetched only inside the
     // window, so a sale whose lead predates it would get nothing, and a half-applied rule
     // reads worse than a consistent simpler one. Flagged in metric-definitions.md.
+    //
+    // attributedCampaign/AdSet/Ad/Property (added 2026-09-23) read straight off the SAME
+    // firstTouches map LeadFact's attributed* fields use — independent of leadFactById/
+    // population, same reasoning as channel/rawSource above: a Channel-Partner buyer has
+    // no LeadFact, but this tile still has to answer a Campaign/AdSet/Ad/Property filter.
     const buyerOf = (d: RawDeal) => {
         const leadId = dealLeadId(d)
         const rawLead = leadId ? rawLeadById.get(leadId) : undefined
         const source = rawLead?.Lead_Source ?? ''
+        const touch = leadId ? firstTouches.get(leadId) : undefined
         return {
             isChannelPartner: isChannelPartnerSource(source),
             clusters: cleanClusters(rawLead?.Truva_Cluster),
@@ -602,6 +576,10 @@ export async function fetchBuyerFacts(windowStart: Date, windowEnd: Date): Promi
             channel: mapChannel(source),
             rawSource: source,
             sourceLabel: sourceLabel(source),
+            attributedCampaign: touch?.campaign ?? '',
+            attributedAdSet: touch?.adSet ?? '',
+            attributedAd: touch?.ad ?? '',
+            attributedProperty: touch?.property ?? '',
         }
     }
 

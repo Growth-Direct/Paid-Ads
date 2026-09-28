@@ -1,4 +1,4 @@
-import { fetchRecordsByIds, queryRecords } from '@/lib/crm'
+import { executeCOQL, fetchRecordsByIds } from '@/lib/zoho'
 import { dateKey, isVcv } from '@/lib/buyer/shared'
 import { assignSellerIdentity, sellerPhoneKey, type SellerFact, type SellerFacts, type SellerProductFact } from './facts'
 import { fetchSlices, foldSellerStatus, isSellerQualified, mapSellerChannel, toList, toZohoDateTime } from './shared'
@@ -39,8 +39,6 @@ interface RawSeller {
     Truva_Cluster?: string[] | string | null
     Truva_Micromarket?: string[] | string | null
     Created_Time?: string
-    EE_Response_Time?: string | null
-    Acefone_Lead_ID?: string | null
 }
 interface RawProduct {
     id: string
@@ -50,16 +48,6 @@ interface RawProduct {
     Seller_MoU_Signing_Date?: string | null
     Truva_Cluster?: string[] | string | null
     Created_Time?: string
-    Min_Guarantee?: number | null
-    Source?: string | null
-    // Post Visit TAT's per-stage transition dates — verified live 2026-09-24 via the Metabase
-    // mirror (table 153): Valuation_Request_date (field_id t153-142, 36/36 populated for
-    // Acq_Status = 'Sent for Valuation'), Pricing_completion_date (t153-143, 43/43 for
-    // 'Valuation Completed'), Offer_Date (t153-139, 24/24 for 'Offer Made to Seller').
-    // Visit_Date above already covers 'Visit Completed'.
-    Valuation_Request_date?: string | null
-    Pricing_completion_date?: string | null
-    Offer_Date?: string | null
 }
 
 function productSellerId(p: RawProduct): string | null {
@@ -110,66 +98,38 @@ export async function fetchSellerFactsCached(windowStart: Date, windowEnd: Date)
  *  the parent seller's creation quarter, so there's no date column to filter on, and every
  *  Acq_Status is needed somewhere downstream: qualifying-visit and pipeline classification in
  *  derive.ts, plus the Overall Funnel's "Qualified Properties" float box, which counts a
- *  Qualified seller's properties regardless of status. One unconditional fetch (~4.6k rows
- *  all-time) is simpler and safer than several targeted ones that each risk missing a status
- *  nobody's queried for yet.
- *
- *  Every read comes from growth's copy of the Zoho mirror (lib/crm.ts), with the filters the COQL
- *  reads had.
+ *  Qualified seller's properties regardless of status. One unconditional fetch (~4-5k rows
+ *  all-time per the doc's own per-status counts, well inside the COQL 10k cap) is simpler and
+ *  safer than several targeted ones that each risk missing a status nobody's queried for yet.
  *
  *  Sellers referenced by a property but created before the window are then fetched by id, so
  *  the Old cohort can be resolved. */
 export async function fetchSellerFacts(windowStart: Date, windowEnd: Date): Promise<SellerFacts> {
-    const sellerFields = [
-        'id',
-        SELLER_NAME_FIELD,
-        'Phone_Number',
-        'Call_Status',
-        'Reason_for_Lead_Drop',
-        'Truva_Qualified',
-        'Seller_Source',
-        'Truva_Cluster',
-        'Truva_Micromarket',
-        'Created_Time',
-        'EE_Response_Time',
-        'Acefone_Lead_ID',
-    ]
+    const sellerFields =
+        `id, ${SELLER_NAME_FIELD}, Phone_Number, Call_Status, Reason_for_Lead_Drop, Truva_Qualified, Seller_Source, Truva_Cluster, Truva_Micromarket, Created_Time`
     const sellersQ = (a: Date, b: Date) =>
-        queryRecords('Sellers', sellerFields, [
-            { field: 'Created_Time', op: 'gte', value: toZohoDateTime(a) },
-            { field: 'Created_Time', op: 'lt', value: toZohoDateTime(b) },
-        ])
+        `SELECT ${sellerFields} FROM Sellers WHERE Created_Time >= '${toZohoDateTime(a)}' AND Created_Time < '${toZohoDateTime(b)}'`
 
     // 1) Window sellers (the quarter cohort / population). Sliced like the buyer leads fetch
     //    so a window wider than ~a quarter stays under the row cap; sequential, never concurrent.
     const slices = fetchSlices(windowStart, windowEnd)
     const windowSellers: RawSeller[] = []
     for (const [a, b] of slices) {
-        const page = (await sellersQ(a, b).catch((e) => {
+        const page = (await executeCOQL(sellersQ(a, b)).catch((e) => {
             throw new Error(`sellersQ failed for ${a.toISOString()}: ${e.message}`)
         })) as RawSeller[]
         windowSellers.push(...page)
     }
     const windowSellerIds = new Set(windowSellers.map((s) => s.id))
 
-    const productFields = [
-        'id',
-        'Seller',
-        'Acq_Status',
-        'Visit_Date',
-        'Seller_MoU_Signing_Date',
-        'Truva_Cluster',
-        'Created_Time',
-        'Min_Guarantee',
-        'Source',
-        'Valuation_Request_date',
-        'Pricing_completion_date',
-        'Offer_Date',
-    ]
+    const productFields = `id, Seller, Acq_Status, Visit_Date, Seller_MoU_Signing_Date, Truva_Cluster, Created_Time`
 
-    // 2) EVERY seller-linked property, any Acq_Status — no filter. See the doc comment above for
-    //    why this one broad fetch beats several targeted ones.
-    const rawAllProducts = (await queryRecords('Products', productFields).catch((e) => {
+    // 2) EVERY seller-linked property, any Acq_Status. COQL requires a WHERE clause (a bare
+    //    `SELECT ... FROM Products` 400s with SYNTAX_ERROR "missing clause" — verified live
+    //    2026-09-07), so `id is not null` stands in as an always-true one. See the doc comment
+    //    above for why this one broad fetch beats several targeted ones.
+    const allProductsQ = `SELECT ${productFields} FROM Products WHERE id is not null`
+    const rawAllProducts = (await executeCOQL(allProductsQ).catch((e) => {
         throw new Error(`products-all failed: ${e.message}`)
     })) as RawProduct[]
 
@@ -188,7 +148,7 @@ export async function fetchSellerFacts(windowStart: Date, windowEnd: Date): Prom
     const referencedCount = referenced.size
     let patchedCount = 0
     if (referenced.size > 0) {
-        const patched = (await fetchRecordsByIds('Sellers', sellerFields, [
+        const patched = (await fetchRecordsByIds('Sellers', sellerFields.split(',').map((f) => f.trim()), [
             ...referenced,
         ])) as RawSeller[]
         patchedCount = patched.length
@@ -229,8 +189,6 @@ export async function fetchSellerFacts(windowStart: Date, windowEnd: Date): Prom
             micromarkets: toList(s.Truva_Micromarket),
             clusters: toList(s.Truva_Cluster),
             createdAt: s.Created_Time ?? '',
-            responseAt: s.EE_Response_Time ?? null,
-            acefoneLeadId: s.Acefone_Lead_ID ?? null,
         })
     }
     // One person is one phone, not one Zoho record. Runs after every exclusion above.
@@ -248,11 +206,6 @@ export async function fetchSellerFacts(windowStart: Date, windowEnd: Date): Prom
             visitDate: p.Visit_Date ? p.Visit_Date.slice(0, 10) : null,
             mouSigningDate: p.Seller_MoU_Signing_Date ? p.Seller_MoU_Signing_Date.slice(0, 10) : null,
             createdAt: p.Created_Time ?? '',
-            minGuarantee: p.Min_Guarantee ?? 0,
-            source: (p.Source ?? '').trim(),
-            valuationRequestDate: p.Valuation_Request_date ? p.Valuation_Request_date.slice(0, 10) : null,
-            pricingCompletionDate: p.Pricing_completion_date ? p.Pricing_completion_date.slice(0, 10) : null,
-            offerDate: p.Offer_Date ? p.Offer_Date.slice(0, 10) : null,
         }
     }
     const products = rawProducts.map(toFact).filter((p): p is SellerProductFact => p != null)
@@ -278,11 +231,6 @@ export async function fetchSellerFacts(windowStart: Date, windowEnd: Date): Prom
             visitDate: p.Visit_Date ? p.Visit_Date.slice(0, 10) : null,
             mouSigningDate: p.Seller_MoU_Signing_Date ? p.Seller_MoU_Signing_Date.slice(0, 10) : null,
             createdAt: p.Created_Time ?? '',
-            minGuarantee: p.Min_Guarantee ?? 0,
-            source: (p.Source ?? '').trim(),
-            valuationRequestDate: p.Valuation_Request_date ? p.Valuation_Request_date.slice(0, 10) : null,
-            pricingCompletionDate: p.Pricing_completion_date ? p.Pricing_completion_date.slice(0, 10) : null,
-            offerDate: p.Offer_Date ? p.Offer_Date.slice(0, 10) : null,
         }))
     // Place data for those same Channel Partner sellers — Truva_Micromarket/Truva_Cluster are
     // already fetched for every seller regardless of source (sellerFields above), just never

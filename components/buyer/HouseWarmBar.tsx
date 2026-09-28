@@ -8,8 +8,8 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 const PX_PER_HOUSE = 38
 
 const SERIES = [
-    { key: 'everWarmYes', name: 'Ever warm', fill: '#3a7d5d' },
-    { key: 'everWarmNo', name: 'Never warm', fill: '#a9a294' },
+    { key: 'everWarmYes', name: 'Ever warm', fill: '#16A34A' },
+    { key: 'everWarmNo', name: 'Never warm', fill: '#9CA3AF' },
 ] as const
 
 export default function HouseWarmBar({ data }: { data: HouseWarmPoint[] }) {
@@ -30,7 +30,7 @@ export default function HouseWarmBar({ data }: { data: HouseWarmPoint[] }) {
                     gap: 18,
                     fontFamily: "'IBM Plex Mono', monospace",
                     fontSize: 11,
-                    color: '#9a948a',
+                    color: '#333333',
                     marginBottom: 8,
                 }}>
                 {SERIES.map((s) => (
@@ -45,10 +45,10 @@ export default function HouseWarmBar({ data }: { data: HouseWarmPoint[] }) {
                 <div style={{ width: rows.length * PX_PER_HOUSE, minWidth: '100%', height: '100%' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={rows} margin={{ top: 4, right: 4, bottom: 4, left: 0 }} barSize={14}>
-                            <CartesianGrid vertical={false} stroke="#efe9e0" strokeDasharray="0" />
+                            <CartesianGrid vertical={false} stroke="#F5F5F5" strokeDasharray="0" />
                             <XAxis
                                 dataKey="house"
-                                tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fill: '#9a948a' }}
+                                tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fill: '#333333' }}
                                 axisLine={false}
                                 tickLine={false}
                                 angle={-40}
@@ -59,15 +59,15 @@ export default function HouseWarmBar({ data }: { data: HouseWarmPoint[] }) {
                             <YAxis
                                 allowDecimals={false}
                                 width={32}
-                                tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9a948a' }}
+                                tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#333333' }}
                                 axisLine={false}
                                 tickLine={false}
                             />
                             <Tooltip
                                 labelFormatter={(_label, payload) => payload?.[0]?.payload?.fullHouse ?? ''}
                                 contentStyle={{
-                                    background: '#fbf9f4',
-                                    border: '1px solid #e9e4db',
+                                    background: '#FFFFFF',
+                                    border: '1px solid #CCCCCC',
                                     borderRadius: 8,
                                     fontSize: 12,
                                     fontFamily: "'IBM Plex Mono', monospace",

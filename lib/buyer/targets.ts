@@ -155,6 +155,12 @@ for (const [channel, mm, leads, qualified, oldVisits, newVisits, totalVisits, ol
     })
 }
 
+/** Every micromarket and every real channel with a row in the grid — backs the Budget
+ *  Pacing tab's per-cut iteration (lib/buyer/budgetPacing.ts). ALL is excluded from the
+ *  channel list the same way targetsFor's own allChannels does. */
+export const TARGET_MICROMARKETS: string[] = [...new Set(ROWS.map((r) => r[1]))]
+export const TARGET_CHANNELS: string[] = [...new Set(ROWS.map((r) => r[0]))].filter((c) => c !== 'ALL')
+
 /** Sums the grid over the selected channels and micromarkets. An empty selection means
  *  everything. Returns null when nothing in the grid covers the selection, so the caller
  *  can show a dash instead of a misleading zero. */

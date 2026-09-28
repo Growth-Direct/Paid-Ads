@@ -1,6 +1,7 @@
 import type { SellerSpendFact, SellerSpendIngest } from '../facts'
 import { ledgerConfigured } from '@/lib/buyer/spend/ledger'
 import { fetchSellerLedgerSpend } from './ledger'
+import { fetchMetaSellerSpend, metaDirectConfigured } from './meta'
 import { EMPTY_SELLER_SPEND_INGEST } from './parse'
 import snapshot from './spend-jas26.json'
 
@@ -26,8 +27,27 @@ export interface SellerSpendSnapshot {
 }
 
 export async function loadSellerSpend(windowStart: string, windowEnd: string): Promise<SellerSpendSnapshot> {
-    if (ledgerConfigured()) return fetchSellerLedgerSpend(windowStart, windowEnd)
-    return fromSnapshot()
+    const base = ledgerConfigured() ? await fetchSellerLedgerSpend(windowStart, windowEnd) : fromSnapshot()
+    if (!metaDirectConfigured()) return base
+    return overlayMetaSpend(base, await fetchMetaSellerSpend(windowStart, windowEnd))
+}
+
+/** Mirrors lib/buyer/spend/source.ts's overlayMetaSpend exactly — see its own doc comment. */
+export function overlayMetaSpend(base: SellerSpendSnapshot, meta: Awaited<ReturnType<typeof fetchMetaSellerSpend>>): SellerSpendSnapshot {
+    if (meta.ingest.status !== 'ok') {
+        const note = `Live Meta pull failed: ${meta.ingest.error ?? 'unknown error'} — showing ${base.ingest.origin}'s own Meta figures instead`
+        return { ...base, ingest: { ...base.ingest, error: [base.ingest.error, note].filter(Boolean).join('. ') } }
+    }
+    const nonMeta = base.facts.filter((f) => f.rawSource !== 'meta')
+    const notes = [base.ingest.error, meta.ingest.error].filter((n): n is string => !!n)
+    return {
+        facts: [...nonMeta, ...meta.facts],
+        ingest: {
+            ...base.ingest,
+            error: notes.length > 0 ? notes.join('. ') : null,
+            metaLiveAsOf: meta.ingest.builtAt,
+        },
+    }
 }
 
 function fromSnapshot(): SellerSpendSnapshot {

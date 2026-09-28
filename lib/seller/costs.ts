@@ -106,3 +106,26 @@ export function computeSellerSpendForWindow(
 export function costPer(spend: number, denominator: number): number | null {
     return spend > 0 && denominator > 0 ? spend / denominator : null
 }
+
+// Same row-level filter as computeSellerSpendForWindow, grouped into the same weekly
+// buckets the WoW charts use, instead of summed over one window — backs the new WoW
+// CPL/CPQL/CPV trend charts (derive.ts). Unallocated spend under a place filter is simply
+// dropped from every bucket, same as the unfiltered branch of computeSellerSpendForWindow's
+// own total — this weekly view has no UI slot for reporting it separately.
+export function computeSellerSpendByWeek(
+    facts: SellerFacts,
+    filters: SellerFilters,
+    bucketStarts: Date[],
+    bucketOf: (iso: string) => number | undefined
+): number[] {
+    const clusterMms = filters.clusters.length ? micromarketsForSellerClusters(filters.clusters) : null
+    const totals = bucketStarts.map(() => 0)
+    for (const s of facts.spend) {
+        const idx = bucketOf(s.date)
+        if (idx === undefined) continue
+        const match = spendMatches(s, filters, clusterMms)
+        if (!match) continue
+        totals[idx]! += s.spendInr
+    }
+    return totals
+}

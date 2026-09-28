@@ -1,4 +1,5 @@
 import type { LeadFact, SoldBidFact, VisitFact } from './facts'
+import { ATTRIBUTION_NOT_APPLICABLE, ATTRIBUTION_UNMAPPED_PROPERTY } from './shared'
 
 // An empty array means "no filter on this dimension", not "match nothing".
 export interface Period {
@@ -18,6 +19,15 @@ export interface BuyerFilters {
     channels: string[]
     /** Raw Zoho Lead_Source values, lowercased. Narrows within a channel. */
     sources: string[]
+    /** Added 2026-09-23. Matched against LeadFact.attributedCampaign/AdSet/Ad/Property (the
+     *  lead's first-touch Lead_Source_History row) — a single value per lead, not an array,
+     *  so matching is a plain `.includes()` like `sources`, not `matchesList` like
+     *  clusters/micromarkets. Includes ATTRIBUTION_NOT_APPLICABLE/ATTRIBUTION_UNMAPPED_PROPERTY
+     *  as selectable values, same placeholders the attribution charts already show. */
+    campaigns: string[]
+    adSets: string[]
+    ads: string[]
+    properties: string[]
 }
 
 export const EMPTY_FILTERS: BuyerFilters = {
@@ -27,10 +37,23 @@ export const EMPTY_FILTERS: BuyerFilters = {
     micromarkets: [],
     channels: [],
     sources: [],
+    campaigns: [],
+    adSets: [],
+    ads: [],
+    properties: [],
 }
 
 export function hasDimensionFilter(f: BuyerFilters): boolean {
-    return f.clusters.length > 0 || f.micromarkets.length > 0 || f.channels.length > 0 || f.sources.length > 0
+    return (
+        f.clusters.length > 0 ||
+        f.micromarkets.length > 0 ||
+        f.channels.length > 0 ||
+        f.sources.length > 0 ||
+        f.campaigns.length > 0 ||
+        f.adSets.length > 0 ||
+        f.ads.length > 0 ||
+        f.properties.length > 0
+    )
 }
 
 export function isFiltered(f: BuyerFilters): boolean {
@@ -62,6 +85,10 @@ export function leadMatches(lead: LeadFact, f: BuyerFilters): boolean {
     if (!matchesList(f.micromarkets, lead.micromarkets)) return false
     if (f.channels.length > 0 && !f.channels.includes(lead.channel)) return false
     if (f.sources.length > 0 && !f.sources.includes(lead.rawSource.toLowerCase())) return false
+    if (f.campaigns.length > 0 && !f.campaigns.includes(lead.attributedCampaign || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.adSets.length > 0 && !f.adSets.includes(lead.attributedAdSet || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.ads.length > 0 && !f.ads.includes(lead.attributedAd || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.properties.length > 0 && !f.properties.includes(lead.attributedProperty || ATTRIBUTION_UNMAPPED_PROPERTY)) return false
     return true
 }
 
@@ -74,6 +101,12 @@ export function visitMatches(visit: VisitFact, lead: LeadFact | undefined, f: Bu
     if (f.micromarkets.length > 0 && !f.micromarkets.includes(visit.eventMicromarket)) return false
     if (f.channels.length > 0 && !f.channels.includes(visit.channel)) return false
     if (f.sources.length > 0 && !f.sources.includes((lead?.rawSource ?? '').toLowerCase())) return false
+    // Campaign/AdSet/Ad/Property live on the LEAD (its first-touch attribution), not on the
+    // visit itself — same as `sources` above, read off the joined `lead` parameter.
+    if (f.campaigns.length > 0 && !f.campaigns.includes(lead?.attributedCampaign || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.adSets.length > 0 && !f.adSets.includes(lead?.attributedAdSet || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.ads.length > 0 && !f.ads.includes(lead?.attributedAd || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.properties.length > 0 && !f.properties.includes(lead?.attributedProperty || ATTRIBUTION_UNMAPPED_PROPERTY)) return false
     return true
 }
 
@@ -90,5 +123,9 @@ export function soldBidMatches(bid: SoldBidFact, f: BuyerFilters): boolean {
     if (!matchesList(f.micromarkets, bid.micromarkets)) return false
     if (f.channels.length > 0 && (bid.channel === null || !f.channels.includes(bid.channel))) return false
     if (f.sources.length > 0 && !f.sources.includes(bid.rawSource.trim().toLowerCase())) return false
+    if (f.campaigns.length > 0 && !f.campaigns.includes(bid.attributedCampaign || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.adSets.length > 0 && !f.adSets.includes(bid.attributedAdSet || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.ads.length > 0 && !f.ads.includes(bid.attributedAd || ATTRIBUTION_NOT_APPLICABLE)) return false
+    if (f.properties.length > 0 && !f.properties.includes(bid.attributedProperty || ATTRIBUTION_UNMAPPED_PROPERTY)) return false
     return true
 }

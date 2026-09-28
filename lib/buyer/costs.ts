@@ -42,3 +42,25 @@ export function computeSpendForWindow(
     }
     return total
 }
+
+// Same row-level filter as computeSpendForWindow, grouped into the same weekly buckets the
+// WoW charts use, instead of summed over one window — backs the new WoW CPL/CPQL/CPV trend
+// charts (derive.ts). `bucketOf` is the exact function `buildBuckets` (shared.ts) hands the
+// rest of derive.ts, so a spend row lands in the same week a lead/visit created on the same
+// date would.
+export function computeSpendByWeek(
+    facts: BuyerFacts,
+    filters: BuyerFilters,
+    bucketStarts: Date[],
+    bucketOf: (iso: string) => number | undefined
+): number[] {
+    const clusterMms = filters.clusters.length ? new Set(micromarketsForClusters(filters.clusters)) : null
+    const totals = bucketStarts.map(() => 0)
+    for (const s of facts.spend) {
+        const idx = bucketOf(s.date)
+        if (idx === undefined) continue
+        if (!spendMatches(s, filters, clusterMms)) continue
+        totals[idx]! += s.spendInr
+    }
+    return totals
+}

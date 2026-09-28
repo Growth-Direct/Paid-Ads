@@ -19,7 +19,7 @@ interface Props {
 
 const MONO = "'IBM Plex Mono', monospace"
 const BAR_SIZE = 26
-const FILL_COLOR_FALLBACK = '#8ea3d4'
+const FILL_COLOR_FALLBACK = '#9CA3AF'
 
 function n(v: number): string {
     return Math.round(v).toLocaleString('en-IN')
@@ -47,8 +47,8 @@ function TargetLineShape(props: { x?: number; y?: number; width?: number; height
     const lineX = x + width
     return (
         <g>
-            <line x1={lineX} y1={y} x2={lineX} y2={y + height} stroke="#2a2620" strokeWidth={2} />
-            <text x={lineX + 6} y={y + height / 2} dy={4} fontSize={10.5} fill="#3a3630" fontFamily={MONO}>
+            <line x1={lineX} y1={y} x2={lineX} y2={y + height} stroke="#000000" strokeWidth={2} />
+            <text x={lineX + 6} y={y + height / 2} dy={4} fontSize={10.5} fill="#000000" fontFamily={MONO}>
                 Target : {n(payload.target)}
             </text>
         </g>
@@ -67,19 +67,19 @@ function BulletTooltip({ payload }: { payload?: RechartsTooltipPayload[] }) {
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 8,
                 fontSize: 12,
                 fontFamily: MONO,
                 padding: '8px 10px',
             }}>
-            <div style={{ fontWeight: 700, color: '#3a3630', marginBottom: 4 }}>{p.micromarket}</div>
+            <div style={{ fontWeight: 700, color: '#000000', marginBottom: 4 }}>{p.micromarket}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14 }}>
                 <span>Achieved</span>
                 <span>{n(p.actual)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, color: '#6b655c' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, color: '#333333' }}>
                 <span>Target</span>
                 <span>{p.target != null ? n(p.target) : '—'}</span>
             </div>
@@ -95,7 +95,7 @@ export default function MicromarketBulletBar({ data }: Props) {
     const chartData = data.map((d) => ({ ...d, trackMax: domainMax }))
     const tooltipContent = ({ active, payload }: { active?: boolean; payload?: RechartsTooltipPayload[] }) =>
         active ? <BulletTooltip payload={payload} /> : null
-    const axisTick = { fontFamily: MONO, fontSize: 10.5, fill: '#6b655c' }
+    const axisTick = { fontFamily: MONO, fontSize: 10.5, fill: '#333333' }
 
     return (
         <ResponsiveContainer width="100%" height="100%">
@@ -105,11 +105,11 @@ export default function MicromarketBulletBar({ data }: Props) {
                 margin={{ top: 4, right: 90, bottom: 4, left: 4 }}
                 barGap={-BAR_SIZE}
                 barCategoryGap="32%">
-                <CartesianGrid horizontal={false} stroke="#e6e0d6" strokeDasharray="3 3" />
+                <CartesianGrid horizontal={false} stroke="#CCCCCC" strokeDasharray="3 3" />
                 <XAxis type="number" domain={[0, domainMax]} allowDecimals={false} tick={axisTick} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="micromarket" width={82} tick={axisTick} axisLine={false} tickLine={false} />
                 <Tooltip content={tooltipContent} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="trackMax" barSize={BAR_SIZE} radius={4} fill="#e9e4da" isAnimationActive={false} />
+                <Bar dataKey="trackMax" barSize={BAR_SIZE} radius={4} fill="#E5E5E5" isAnimationActive={false} />
                 <Bar dataKey="actual" barSize={BAR_SIZE} radius={4} label={AchievedLabel} isAnimationActive={false}>
                     {data.map((p, i) => (
                         <Cell key={i} fill={colorFor(p.micromarket) || FILL_COLOR_FALLBACK} />

@@ -1,6 +1,5 @@
 import { CLUSTER_TREE, VALID_CLUSTERS } from '@/lib/buyer/shared'
 import type { SellerFacts } from './facts'
-import { mappedMicromarket } from './shared'
 import { SELLER_CHANNELS } from './types'
 
 // Filter options for the seller tab, in the same nested shape the buyer tab uses: a
@@ -19,23 +18,13 @@ import type { OptionGroup } from '@/components/shared/FilterControls'
  *  micromarketsForClusters(), which rewrites HABIBI to the single lumped row "Bangalore"
  *  for the BUYER target grid. The seller grid carries Helsinki, Berlin and Hong Kong as
  *  their own rows, so applying that alias here would resolve a HABIBI pick to a
- *  non-existent seller row and zero its target.
- *
- *  Also appends a live-derived "Unmapped" group (added 2026-09-24, per an explicit
- *  growth-team request) when at least one seller's primary micromarket doesn't map to a named
- *  market — a single selectable entry (`id: 'Unmapped'`, one child of the same id) rather than
- *  the source picker's per-raw-value children, since `placeMatches` special-cases the literal
- *  'Unmapped' filter value to match on the NORMALIZED primary micromarket (see
- *  `mappedMicromarket`), not on whatever distinct junk string a seller happens to carry. */
-export function buildSellerClusterOptions(facts: SellerFacts): OptionGroup[] {
-    const canonical = [...VALID_CLUSTERS].map((cluster) => ({
+ *  non-existent seller row and zero its target. */
+export function buildSellerClusterOptions(): OptionGroup[] {
+    return [...VALID_CLUSTERS].map((cluster) => ({
         id: cluster,
         label: cluster,
         children: (CLUSTER_TREE[cluster] ?? []).map((mm) => ({ id: mm, label: mm })),
     }))
-    const hasUnmapped = facts.sellers.some((s) => mappedMicromarket(s.micromarkets) === 'Unmapped')
-    if (!hasUnmapped) return canonical
-    return [...canonical, { id: 'Unmapped', label: 'Unmapped', children: [{ id: 'Unmapped', label: 'Unmapped' }] }]
 }
 
 /** Channel → raw Seller_Source nesting, built from the loaded window so the list reflects

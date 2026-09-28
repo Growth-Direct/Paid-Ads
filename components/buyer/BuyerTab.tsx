@@ -1,17 +1,25 @@
 'use client'
 
 import ChartCard from '@/components/shared/ChartCard'
-import LeadListModal, { type LeadListItem } from '@/components/shared/LeadListModal'
+import LeadListModal, { type ExtraInfo, type LeadListItem } from '@/components/shared/LeadListModal'
 import SectionHeader from '@/components/shared/SectionHeader'
 import { ACTIONABLE_CHANNELS } from '@/lib/buyer/actionables'
 import type { BuyerFactsResponse } from '@/lib/buyer/aggregate'
 import { deriveReport } from '@/lib/buyer/derive'
 import { EMPTY_FILTERS, type BuyerFilters, hasDimensionFilter } from '@/lib/buyer/filters'
-import { buildClusterOptions, buildSourceOptions } from '@/lib/buyer/options'
+import {
+    buildAdOptions,
+    buildAdSetOptions,
+    buildCampaignOptions,
+    buildClusterOptions,
+    buildPropertyOptions,
+    buildSourceOptions,
+} from '@/lib/buyer/options'
 import { type TimeRange, monthRanges, quarterRanges } from '@/lib/buyer/timePresets'
 import { SOURCE_ORDER, type MicromarketPoint, type ReasonPoint, type WeekSeriesPoint } from '@/lib/buyer/types'
 import { relativeTime } from '@/lib/shared/relativeTime'
 import { useEffect, useMemo, useState } from 'react'
+import CostWeekChart from './CostWeekChart'
 import FilterBar from './FilterBar'
 import FrtChart from './FrtChart'
 import HouseWarmBar from './HouseWarmBar'
@@ -20,9 +28,35 @@ import NotQualifiedPie from './NotQualifiedPie'
 import OverallFunnel from './OverallFunnel'
 import { STATUS_ORDER } from './palette'
 import SpendNote from '@/components/shared/SpendNote'
-import TwoWeekTable from './TwoWeekTable'
+import TwoWeekTable, { type MetricGroup } from './TwoWeekTable'
 import VisitPipelineBar from './VisitPipelineBar'
 import WoWStackedBar from './WoWStackedBar'
+
+// Groups the Target vs Achieved table's rows into collapsible sections — per the growth
+// team's own "hard to scan a long flat table" feedback (TwoWeekTable.tsx's `groups` prop).
+// Every metric UNITS defines in derive.ts must appear here exactly once; TwoWeekTable falls
+// back to a trailing "Other" group for anything left out, so a drift here is visible rather
+// than silently dropping a row.
+const BUYER_TWO_WEEK_GROUPS: MetricGroup[] = [
+    { label: 'Acquisition', metrics: ['Spend', 'Total Leads (LSH)', 'Total Unique Leads', 'CPL'] },
+    { label: 'Qualification', metrics: ['LTQL %', 'Qualified Leads', 'CPQL'] },
+    {
+        label: 'Visits',
+        metrics: ['QL-V %', 'Total Unique Visits', 'Total Overall Visits', 'Visit Duplication Rate', 'Old Visits', 'New Visits', 'CPV'],
+    },
+    { label: 'Warm & Conversions', metrics: ['Ever Warm %', 'Total Conversions', 'Old Conversions', 'New Conversions', 'CAC'] },
+    { label: 'Other', metrics: ['Direct % of Bids'] },
+]
+
+// Fixed colors for the two single-series LSH charts, matching the exact series keys
+// derive.ts bumps them under — not in the buyer palette's channel/status maps, so
+// WoWStackedBar's default colorFor would fall back to a generic series color otherwise.
+function lshCountColorFor(): string {
+    return '#0067FF'
+}
+function lshQualifiedColorFor(): string {
+    return '#16A34A'
+}
 
 const MONO = { fontFamily: "'IBM Plex Mono', monospace" } as const
 type SaveStatus = 'loading' | 'idle' | 'saving' | 'error'
@@ -33,14 +67,14 @@ type SaveStatus = 'loading' | 'idle' | 'saving' | 'error'
 // yet isn't a bad outcome, just an earlier stage.
 const EVER_WARM_ORDER = ['Ever Warm', 'Not Warm']
 function everWarmColorFor(key: string): string {
-    return key === 'Ever Warm' ? '#3a7d5d' : '#c9c2b3'
+    return key === 'Ever Warm' ? '#16A34A' : '#9CA3AF'
 }
 
 // Same reasoning as the Ever Warm pair above: Direct takes the accent green, Channel Partner a
 // muted neutral rather than red — a CP visit is a different route to a buyer, not a failure.
 const BID_SOURCE_ORDER = ['Direct', 'Channel Partner']
 function bidSourceColorFor(key: string): string {
-    return key === 'Direct' ? '#3a7d5d' : '#c9c2b3'
+    return key === 'Direct' ? '#16A34A' : '#9CA3AF'
 }
 
 function seriesEmpty(pts: WeekSeriesPoint[]): boolean {
@@ -51,6 +85,7 @@ interface DrillDown {
     title: string
     subtitle?: string
     leads: LeadListItem[]
+    extraInfo?: ExtraInfo
 }
 
 // The Next 2wk Target column's per-channel/per-micromarket breakdown — mirrors
@@ -256,6 +291,10 @@ export default function BuyerTab({
     const months = useMemo(() => monthRanges(new Date()), [])
     const clusterOptions = useMemo(() => buildClusterOptions(), [])
     const sourceOptions = useMemo(() => buildSourceOptions(response.facts), [response.facts])
+    const campaignOptions = useMemo(() => buildCampaignOptions(response.facts), [response.facts])
+    const adSetOptions = useMemo(() => buildAdSetOptions(response.facts), [response.facts])
+    const adOptions = useMemo(() => buildAdOptions(response.facts), [response.facts])
+    const propertyOptions = useMemo(() => buildPropertyOptions(response.facts), [response.facts])
 
     const data = useMemo(
         () =>
@@ -281,13 +320,26 @@ export default function BuyerTab({
             new Date(periods[0]!.end!).getTime() === rqEnd)
     const timeFiltered = !isReportingQuarter
 
-    function openLeadIds(title: string, subtitle: string | undefined, ids: string[]) {
+    function openLeadIds(title: string, subtitle: string | undefined, ids: string[], extraInfo?: ExtraInfo) {
         const leads = ids.map((id) => data.leadsById[id]).filter((l): l is LeadListItem => !!l)
-        setDrillDown({ title, subtitle, leads })
+        setDrillDown({ title, subtitle, leads, extraInfo })
     }
 
     function onWeekSegment(point: WeekSeriesPoint, key: string, label: string) {
         openLeadIds(`${label}: ${key}`, `Week of ${point.weekLabel}`, point.leadIds[key] ?? [])
+    }
+
+    // Campaign/AdSet/Ad/Property/Micromarket breakdown charts (2026-09-23): same drill-down
+    // as onWeekSegment, plus the Non-Unique Count / Lead Status extra info for that same cut
+    // — EXTRA CONTEXT from Lead_Source_History, not part of the funnel. See
+    // lib/buyer/types.ts's AttributionExtra and metric-definitions.md.
+    function onAttributionSegment(
+        point: WeekSeriesPoint,
+        key: string,
+        label: string,
+        dimension: keyof typeof data.lshExtraByDimension
+    ) {
+        openLeadIds(`${label}: ${key}`, `Week of ${point.weekLabel}`, point.leadIds[key] ?? [], data.lshExtraByDimension[dimension][key])
     }
 
     function onReasonSlice(point: ReasonPoint) {
@@ -327,6 +379,10 @@ export default function BuyerTab({
                 onChange={setFilters}
                 clusterOptions={clusterOptions}
                 sourceOptions={sourceOptions}
+                campaignOptions={campaignOptions}
+                adSetOptions={adSetOptions}
+                adOptions={adOptions}
+                propertyOptions={propertyOptions}
                 quarters={quarters}
                 months={months}
                 periods={periods}
@@ -341,52 +397,6 @@ export default function BuyerTab({
                 title="Overall Funnel"
                 height="auto">
                 <OverallFunnel data={data.overallFunnel} expectedPct={data.expectedPctOfTarget} />
-            </ChartCard>
-
-            <SectionHeader title="WoW Channel Performance" />
-
-            <ChartCard
-                title="WoW Leads by Source"
-                subtitle="Shaded by channel — greens are Paid Ads, reds 3P, blues Organic"
-                height={360}
-                empty={seriesEmpty(data.leadsBySource)}>
-                <WoWStackedBar
-                    data={data.leadsBySource}
-                    seriesOrder={SOURCE_ORDER}
-                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Leads by Source')}
-                    allowPercentToggle
-                    pairWeeks
-                    allowBiWeeklyToggle
-                    pairFromFirstFullWeek
-                />
-            </ChartCard>
-
-            <ChartCard title="WoW Qualified Leads by Source" height={360} empty={seriesEmpty(data.qualifiedBySource)}>
-                <WoWStackedBar
-                    data={data.qualifiedBySource}
-                    seriesOrder={SOURCE_ORDER}
-                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Qualified Leads by Source')}
-                    allowPercentToggle
-                    pairWeeks
-                    allowBiWeeklyToggle
-                    pairFromFirstFullWeek
-                />
-            </ChartCard>
-
-            <ChartCard
-                title="Unique Visits WoW by Source"
-                subtitle="One lead counts once per week, however many properties it visited"
-                height={360}
-                empty={seriesEmpty(data.uniqueVisitsBySource)}>
-                <WoWStackedBar
-                    data={data.uniqueVisitsBySource}
-                    seriesOrder={SOURCE_ORDER}
-                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Unique Visits by Source')}
-                    allowPercentToggle
-                    pairWeeks
-                    allowBiWeeklyToggle
-                    pairFromFirstFullWeek
-                />
             </ChartCard>
 
             <SectionHeader title="Target vs Actuals" />
@@ -406,8 +416,9 @@ export default function BuyerTab({
                     editableNextW2Target={nextTargetDisplay.editable}
                     nextW2TargetOverrides={nextTargetDisplay.overrides}
                     onNextW2TargetChange={handleNextTargetChange}
+                    groups={BUYER_TWO_WEEK_GROUPS}
                 />
-                <div style={{ fontSize: 11.5, color: '#9a948a', marginTop: 6, ...MONO }}>{nextTargetDisplay.caption}</div>
+                <div style={{ fontSize: 11.5, color: '#333333', marginTop: 6, ...MONO }}>{nextTargetDisplay.caption}</div>
                 <SpendNote ingest={data.spendIngest} sheetName="Buyer side spends" />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14 }}>
                     <button
@@ -417,8 +428,8 @@ export default function BuyerTab({
                             padding: '6px 16px',
                             fontSize: 12.5,
                             fontWeight: 600,
-                            color: nextTargetsDirty ? '#fbf9f4' : '#9a948a',
-                            background: nextTargetsDirty ? '#3a7d5d' : '#efe9e0',
+                            color: nextTargetsDirty ? '#FFFFFF' : '#333333',
+                            background: nextTargetsDirty ? '#0067FF' : '#F5F5F5',
                             border: 'none',
                             borderRadius: 6,
                             cursor: nextTargetsDirty && nextTargetsStatus !== 'saving' ? 'pointer' : 'default',
@@ -426,7 +437,7 @@ export default function BuyerTab({
                         }}>
                         {nextTargetsStatus === 'saving' ? 'Saving…' : 'Save Next 2wk Targets'}
                     </button>
-                    <span style={{ fontSize: 11.5, color: nextTargetsStatus === 'error' ? '#c7533e' : '#9a948a', ...MONO }}>
+                    <span style={{ fontSize: 11.5, color: nextTargetsStatus === 'error' ? '#DC2626' : '#333333', ...MONO }}>
                         {nextTargetsStatus === 'error'
                             ? 'Could not save — try again'
                             : nextTargetsDirty
@@ -442,7 +453,49 @@ export default function BuyerTab({
                 <NextActionables />
             </ChartCard>
 
-            <SectionHeader title="Pre-sales" />
+            <ChartCard title="WoW Leads (LSH)" subtitle="Every Lead_Source_History touch, by week — not deduped by lead" height={280} empty={seriesEmpty(data.lshCountByWeek)}>
+                <WoWStackedBar data={data.lshCountByWeek} colorFor={lshCountColorFor} onSegmentClick={(p, k) => onWeekSegment(p, k, 'Leads (LSH)')} pairWeeks allowBiWeeklyToggle pairFromFirstFullWeek />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads (LSH)" subtitle="Same touches, restricted to a Qualified-family status at the time of that touch" height={280} empty={seriesEmpty(data.lshQualifiedByWeek)}>
+                <WoWStackedBar data={data.lshQualifiedByWeek} colorFor={lshQualifiedColorFor} onSegmentClick={(p, k) => onWeekSegment(p, k, 'Qualified Leads (LSH)')} pairWeeks allowBiWeeklyToggle pairFromFirstFullWeek />
+            </ChartCard>
+
+            <ChartCard
+                title="WoW Leads by Source"
+                subtitle="Shaded by channel — greens are Paid Ads, reds 3P, blues Organic"
+                height={360}
+                empty={seriesEmpty(data.leadsBySource)}>
+                <WoWStackedBar
+                    data={data.leadsBySource}
+                    seriesOrder={SOURCE_ORDER}
+                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Leads by Source')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW CPL" subtitle="Weekly Spend ÷ that week's Total Unique Leads" height={280} empty={data.cplByWeek.every((p) => p.value == null)}>
+                <CostWeekChart data={data.cplByWeek} label="CPL" />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads by Source" height={360} empty={seriesEmpty(data.qualifiedBySource)}>
+                <WoWStackedBar
+                    data={data.qualifiedBySource}
+                    seriesOrder={SOURCE_ORDER}
+                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Qualified Leads by Source')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW CPQL" subtitle="Weekly Spend ÷ that week's Qualified Leads" height={280} empty={data.cpqlByWeek.every((p) => p.value == null)}>
+                <CostWeekChart data={data.cpqlByWeek} label="CPQL" />
+            </ChartCard>
 
             <ChartCard
                 title="WoW Leads by Status"
@@ -457,19 +510,74 @@ export default function BuyerTab({
                     pairWeeks
                     allowBiWeeklyToggle
                     pairFromFirstFullWeek
-                    allowStatusFilter
+                />
+            </ChartCard>
+
+            <ChartCard title="Not Qualified Reasons" height={320} empty={data.notQualifiedReasons.length === 0}>
+                <NotQualifiedPie data={data.notQualifiedReasons} onSliceClick={onReasonSlice} showPercent />
+            </ChartCard>
+
+            <ChartCard
+                title="WoW Gross Visits (by Lead Created Week)"
+                subtitle="Same dedupe as the chart below (person + property, not person alone), bucketed by the LEAD's created week instead of the visit's own week"
+                height={320}
+                empty={seriesEmpty(data.uniqueGrossVisitsByLeadCreatedWeek)}>
+                <WoWStackedBar
+                    data={data.uniqueGrossVisitsByLeadCreatedWeek}
+                    seriesOrder={SOURCE_ORDER}
+                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Gross Visits (by Lead Created Week)')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
                 />
             </ChartCard>
 
             <ChartCard
                 title="WoW Unique Gross Visits by Source"
-                subtitle="Dedupes on person + property, not person alone — the same buyer visiting a different flat counts again"
+                subtitle="Dedupes on person + property, not person alone — the same buyer visiting a different flat counts again. Bucketed by the visit's own week, irrespective of when the lead was created."
                 height={320}
                 empty={seriesEmpty(data.uniqueGrossVisitsBySource)}>
                 <WoWStackedBar
                     data={data.uniqueGrossVisitsBySource}
                     seriesOrder={SOURCE_ORDER}
                     onSegmentClick={(p, k) => onWeekSegment(p, k, 'Unique Gross Visits by Source')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard
+                title="WoW Unique Visits (by Lead Created Week)"
+                subtitle="Same dedupe as the chart below (one lead counts once per week), bucketed by the LEAD's created week instead of the visit's own week"
+                height={320}
+                empty={seriesEmpty(data.uniqueVisitsByLeadCreatedWeek)}>
+                <WoWStackedBar
+                    data={data.uniqueVisitsByLeadCreatedWeek}
+                    seriesOrder={SOURCE_ORDER}
+                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Unique Visits (by Lead Created Week)')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW CPV" subtitle="Weekly Spend ÷ that week's count from Unique Visits (by Lead Created Week)" height={280} empty={data.cpvByWeek.every((p) => p.value == null)}>
+                <CostWeekChart data={data.cpvByWeek} label="CPV" />
+            </ChartCard>
+
+            <ChartCard
+                title="Unique Visits WoW by Source"
+                subtitle="One lead counts once per week, however many properties it visited. Bucketed by the visit's own week, irrespective of when the lead was created."
+                height={360}
+                empty={seriesEmpty(data.uniqueVisitsBySource)}>
+                <WoWStackedBar
+                    data={data.uniqueVisitsBySource}
+                    seriesOrder={SOURCE_ORDER}
+                    onSegmentClick={(p, k) => onWeekSegment(p, k, 'Unique Visits by Source')}
                     allowPercentToggle
                     pairWeeks
                     allowBiWeeklyToggle
@@ -492,6 +600,14 @@ export default function BuyerTab({
                     allowBiWeeklyToggle
                     pairFromFirstFullWeek
                 />
+            </ChartCard>
+
+            <ChartCard
+                title="Visit Pipeline by Micromarket"
+                subtitle={timeFiltered ? 'A live snapshot — the time filter does not apply here' : undefined}
+                height={320}
+                empty={data.visitPipeline.length === 0}>
+                <VisitPipelineBar data={data.visitPipeline} onSegmentClick={onPipelineSegment} />
             </ChartCard>
 
             <ChartCard
@@ -519,21 +635,29 @@ export default function BuyerTab({
                 <FrtChart data={data.frtByWeek} />
             </ChartCard>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                <ChartCard title="Not Qualified Reasons" height={320} empty={data.notQualifiedReasons.length === 0}>
-                    <NotQualifiedPie data={data.notQualifiedReasons} onSliceClick={onReasonSlice} showPercent />
-                </ChartCard>
-
-                <ChartCard
-                    title="Visit Pipeline by Micromarket"
-                    subtitle={timeFiltered ? 'A live snapshot — the time filter does not apply here' : undefined}
-                    height={320}
-                    empty={data.visitPipeline.length === 0}>
-                    <VisitPipelineBar data={data.visitPipeline} onSegmentClick={onPipelineSegment} />
-                </ChartCard>
-            </div>
-
             <SectionHeader title="Micromarket" />
+
+            <ChartCard title="WoW Leads by Micromarket" height={320} empty={seriesEmpty(data.leadsByMicromarket)}>
+                <WoWStackedBar
+                    data={data.leadsByMicromarket}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Leads by Micromarket', 'micromarket')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads by Micromarket" height={320} empty={seriesEmpty(data.qualifiedByMicromarket)}>
+                <WoWStackedBar
+                    data={data.qualifiedByMicromarket}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Qualified Leads by Micromarket', 'micromarket')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
 
             <ChartCard title="WoW Qualified Leads by Cluster" height={320} empty={seriesEmpty(data.qualifiedByCluster)}>
                 <WoWStackedBar
@@ -561,11 +685,106 @@ export default function BuyerTab({
                 <HouseWarmBar data={data.visitedByEverWarm} />
             </ChartCard>
 
+            <SectionHeader title="Attribution (from Lead Source History)" />
+
+            <ChartCard title="WoW Leads by Campaign" height={320} empty={seriesEmpty(data.leadsByCampaign)}>
+                <WoWStackedBar
+                    data={data.leadsByCampaign}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Leads by Campaign', 'campaign')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads by Campaign" height={320} empty={seriesEmpty(data.qualifiedByCampaign)}>
+                <WoWStackedBar
+                    data={data.qualifiedByCampaign}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Qualified Leads by Campaign', 'campaign')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Leads by Ad Set" height={320} empty={seriesEmpty(data.leadsByAdSet)}>
+                <WoWStackedBar
+                    data={data.leadsByAdSet}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Leads by Ad Set', 'adSet')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads by Ad Set" height={320} empty={seriesEmpty(data.qualifiedByAdSet)}>
+                <WoWStackedBar
+                    data={data.qualifiedByAdSet}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Qualified Leads by Ad Set', 'adSet')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Leads by Ad" height={320} empty={seriesEmpty(data.leadsByAd)}>
+                <WoWStackedBar
+                    data={data.leadsByAd}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Leads by Ad', 'ad')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads by Ad" height={320} empty={seriesEmpty(data.qualifiedByAd)}>
+                <WoWStackedBar
+                    data={data.qualifiedByAd}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Qualified Leads by Ad', 'ad')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard
+                title="WoW Leads by Property"
+                subtitle="The property a lead was enquiring about at that touch, not a single definitive property for the lead — before a bid exists, a lead can be interested in more than one"
+                height={320}
+                empty={seriesEmpty(data.leadsByProperty)}>
+                <WoWStackedBar
+                    data={data.leadsByProperty}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Leads by Property', 'property')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
+            <ChartCard title="WoW Qualified Leads by Property" height={320} empty={seriesEmpty(data.qualifiedByProperty)}>
+                <WoWStackedBar
+                    data={data.qualifiedByProperty}
+                    onSegmentClick={(p, k) => onAttributionSegment(p, k, 'Qualified Leads by Property', 'property')}
+                    allowPercentToggle
+                    pairWeeks
+                    allowBiWeeklyToggle
+                    pairFromFirstFullWeek
+                />
+            </ChartCard>
+
             {drillDown && (
                 <LeadListModal
                     title={drillDown.title}
                     subtitle={drillDown.subtitle}
                     leads={drillDown.leads}
+                    extraInfo={drillDown.extraInfo}
                     onClose={() => setDrillDown(null)}
                 />
             )}

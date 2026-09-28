@@ -92,6 +92,24 @@ export interface LeadFact {
     attributedAt: string | null
     /** False when no serial-1 LSH row was found. Drives the cost coverage denominator. */
     hasAttribution: boolean
+
+    // Added 2026-09-23, same first-touch LSH row as the block above and under the exact
+    // same rule: the twelve cards above this comment in derive.ts's original golden test
+    // never read these either. They exist for a NEW, separate set of cards — Leads/Qualified
+    // by Campaign/AdSet/Ad/Property — added alongside, not by changing, the original twelve.
+    /** LSH Campaign_Name of the first touch. '' when the touch had no ad campaign (Direct,
+     *  Channel Partner, organic, referral, ...) or there is no LSH row — a real, expected
+     *  value, not a data gap; ~27% of touches have no campaign at all (verified live
+     *  2026-09-23). */
+    attributedCampaign: string
+    attributedAdSet: string
+    attributedAd: string
+    /** LSH Property_Name of the first touch, raw and untrimmed-display, same convention as
+     *  Property_Name elsewhere. '' when blank or there is no LSH row. Distinct from a Bid's
+     *  property (Deals.Products) — before a bid exists a lead isn't tied to one property, so
+     *  this is the property they were enquiring about at that specific engagement, not a
+     *  single definitive property for the lead. See metric-definitions.md. */
+    attributedProperty: string
 }
 
 export interface VisitFact {
@@ -161,6 +179,14 @@ export interface SoldBidFact {
     rawSource: string
     /** rawSource folded to its display spelling, for labelling rather than filtering. */
     sourceLabel: string
+    /** Added 2026-09-23, resolved the same independently-of-population way as channel/
+     *  rawSource above: straight from the first-touch Lead_Source_History map, not via a
+     *  LeadFact, so a Channel-Partner buyer's sale stays filterable by these too. '' when
+     *  there is no first-touch row or it had no value for that field. */
+    attributedCampaign: string
+    attributedAdSet: string
+    attributedAd: string
+    attributedProperty: string
 }
 
 /** One completed visit EVENT in the window, tagged by whether the bid behind it came from a
@@ -189,9 +215,20 @@ export interface HouseFact {
 // enquiry (including a lead's re-enquiries), against LeadFact's one-row-per-lead "Unique
 // Leads". Only touches whose Lead resolves to an eligible LeadFact are ever counted, so
 // the same VCV/channel exclusions apply without re-checking them here.
+//
+// campaign/adSet/ad/property/micromarket/leadStatus (added 2026-09-23) back the
+// "Non-Unique Count" / "Lead Status" extra-info block shown in the drill-down for the
+// Campaign/AdSet/Ad/Property/Micromarket breakdown charts — EXTRA CONTEXT, not part of the
+// funnel. See lib/buyer/lsh.ts's fetchAllTouches and metric-definitions.md.
 export interface LshTouchFact {
     leadId: string
     timestamp: string
+    campaign: string
+    adSet: string
+    ad: string
+    property: string
+    micromarket: string
+    leadStatus: string
 }
 
 // One row per bid (Deal), carrying only what the Direct-vs-Channel-Partner split needs.
@@ -238,6 +275,12 @@ export interface SpendIngest {
     unknownMicromarkets: string[]
     /** When the snapshot was built, so the footer can say how fresh spend is. */
     builtAt: string | null
+    /** Added 2026-09-28. Set when this window's Meta ('meta' rawSource) rows were overlaid
+     *  with a live Graph API pull instead of coming from origin above — the timestamp of that
+     *  pull, so the footer can say Meta specifically is fresher than the rest. Null (the
+     *  default, and every pre-existing snapshot/fixture) means Meta rows still come from
+     *  `origin` like everything else. See lib/buyer/spend/meta.ts and source.ts's loadSpend(). */
+    metaLiveAsOf?: string | null
 }
 
 export interface BuyerFacts {

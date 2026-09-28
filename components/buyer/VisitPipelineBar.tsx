@@ -24,11 +24,11 @@ export default function VisitPipelineBar({ data, onSegmentClick }: Props) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <BarChart layout="vertical" data={chartData} margin={{ top: 4, right: 12, bottom: 4, left: 4 }} barSize={16}>
-                <CartesianGrid horizontal={false} stroke="#efe9e0" strokeDasharray="0" />
+                <CartesianGrid horizontal={false} stroke="#F5F5F5" strokeDasharray="0" />
                 <XAxis
                     type="number"
                     allowDecimals={false}
-                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#9a948a' }}
+                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#333333' }}
                     axisLine={false}
                     tickLine={false}
                 />
@@ -36,14 +36,14 @@ export default function VisitPipelineBar({ data, onSegmentClick }: Props) {
                     type="category"
                     dataKey="micromarket"
                     width={104}
-                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#6b655c' }}
+                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#333333' }}
                     axisLine={false}
                     tickLine={false}
                 />
                 <Tooltip
                     contentStyle={{
-                        background: '#fbf9f4',
-                        border: '1px solid #e9e4db',
+                        background: '#FFFFFF',
+                        border: '1px solid #CCCCCC',
                         borderRadius: 8,
                         fontSize: 12,
                         fontFamily: MONO,

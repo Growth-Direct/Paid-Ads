@@ -45,13 +45,6 @@ export interface SellerFact {
     /** Every cluster on the record. Seller cluster data is poor; carried but not filtered on. */
     clusters: string[]
     createdAt: string
-    /** EE_Response_Time — when the team first responded, or null if not yet. For FRT
-     *  (First Response Time), mirroring lib/buyer/derive.ts's own FRT block exactly: the
-     *  Sellers module carries the identical field names Leads does. */
-    responseAt: string | null
-    /** Acefone_Lead_ID — FRT is only meaningful for a seller that came through the calling
-     *  system at all, same gate Buyer's FRT uses. */
-    acefoneLeadId: string | null
 }
 
 // One row per seller-linked Product carrying only what the visit/conversion logic needs.
@@ -69,29 +62,6 @@ export interface SellerProductFact {
      *  Used only by the "Qualified Properties by Source" WoW chart, which attributes each
      *  property to the week it was itself created, not the week its seller was. */
     createdAt: string
-    /** Products.Min_Guarantee — the seller's minimum guarantee price (₹). Summed over the same
-     *  MoU-Signed, in-window population as conversions for the Target vs Achieved table's "GMV
-     *  Acquired" row. 0 when null/missing so a summation never needs a null check. */
-    minGuarantee: number
-    /** Products.Source — the PROPERTY's own source, independent of the seller's own
-     *  Seller_Source. Verified live 2026-09-24: 25 distinct values (Meta, 99 Acres, Offline
-     *  Branding, ...), with 'Channel Partner' the single largest at ~2,900 of ~4,300 rows. Used
-     *  only to split "WoW Property Visits — Direct vs. CP": Direct = anything other than
-     *  'Channel Partner'. */
-    source: string
-    /** Products.Valuation_Request_date (YYYY-MM-DD), or null — the property's transition date
-     *  into Acq_Status 'Sent for Valuation'. Verified live 2026-09-24, 36/36 populated for that
-     *  status. Drives Post Visit TAT's time-windowing and its Visit Completed -> Sent for
-     *  Valuation average-TAT connector. */
-    valuationRequestDate: string | null
-    /** Products.Pricing_completion_date (YYYY-MM-DD), or null — the property's transition date
-     *  into Acq_Status 'Valuation Completed'. Verified live 2026-09-24, 43/43 populated for that
-     *  status. */
-    pricingCompletionDate: string | null
-    /** Products.Offer_Date (YYYY-MM-DD), or null — the property's transition date into
-     *  Acq_Status 'Offer Made to Seller' specifically (not Offer Made to Broker). Verified live
-     *  2026-09-24, 24/24 populated for that status. */
-    offerDate: string | null
 }
 
 // Ad/3P/offline spend for the SELLER tab, pre-aggregated from the growth team's manually
@@ -140,6 +110,11 @@ export interface SellerSpendIngest {
     unknownMicromarkets: string[]
     /** When the snapshot was built, so the UI can say how fresh spend is. */
     builtAt: string | null
+    /** Added 2026-09-28 — mirrors lib/buyer/facts.ts's SpendIngest.metaLiveAsOf exactly: set
+     *  when this window's Meta rows were overlaid with a live Graph API pull instead of
+     *  coming from `origin`. Null means Meta rows still come from origin like everything
+     *  else. See lib/seller/spend/meta.ts and source.ts's loadSellerSpend(). */
+    metaLiveAsOf?: string | null
 }
 
 export interface SellerFacts {

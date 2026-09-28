@@ -48,41 +48,41 @@
     --font-sans: 'Hanken Grotesk', system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
 
-    --color-paper: #f4f1ea;
-    --color-card: #fbf9f4;
-    --color-card-border: #e9e4db;
-    --color-card-alt: #f6f2ea;
-    --color-border: #e6e0d6;
-    --color-border-light: #efe9e0;
-    --color-border-medium: #ece6dc;
-    --color-ink: #23211e;
-    --color-ink-2: #3f3b34;
-    --color-ink-3: #4a463e;
-    --color-ink-4: #5c574f;
-    --color-ink-5: #6b665e;
-    --color-ink-6: #8a857b;
-    --color-ink-7: #9a948a;
-    --color-ink-8: #aaa49a;
-    --color-ink-9: #b3ada2;
-    --color-ink-10: #bdb6aa;
-    --color-ink-11: #cfc8bc;
-    --color-ink-12: #d8d1c5;
+    --color-paper: #FFFFFF;
+    --color-card: #FFFFFF;
+    --color-card-border: #CCCCCC;
+    --color-card-alt: #F5F5F5;
+    --color-border: #CCCCCC;
+    --color-border-light: #E5E5E5;
+    --color-border-medium: #CCCCCC;
+    --color-ink: #000000;
+    --color-ink-2: #1A1A1A;
+    --color-ink-3: #262626;
+    --color-ink-4: #333333;
+    --color-ink-5: #404040;
+    --color-ink-6: #4D4D4D;
+    --color-ink-7: #666666;
+    --color-ink-8: #808080;
+    --color-ink-9: #999999;
+    --color-ink-10: #B3B3B3;
+    --color-ink-11: #CCCCCC;
+    --color-ink-12: #E5E5E5;
 
-    --color-red: #b5483d;
-    --color-red-bg: #f7eae8;
-    --color-amber: #b07d28;
-    --color-amber-bg: #f6efdf;
-    --color-green: #3a7d5d;
-    --color-green-bg: #e9f1ec;
-    --color-blue: #4f6f8f;
-    --color-blue-bg: #e9eef4;
-    --color-neutral: #857f74;
-    --color-neutral-bg: #efebe3;
+    --color-red: #DC2626;
+    --color-red-bg: #FEE2E2;
+    --color-amber: #D97706;
+    --color-amber-bg: #FEF3C7;
+    --color-green: #16A34A;
+    --color-green-bg: #DCFCE7;
+    --color-blue: #0067FF;
+    --color-blue-bg: #E6F0FF;
+    --color-neutral: #6B7280;
+    --color-neutral-bg: #F5F5F5;
 
-    --color-cp: #cf9d5b;
-    --color-direct: #3a7d5d;
-    --color-track: #ece6dc;
-    --color-revisit: #9aab7f;
+    --color-cp: #F59E0B;
+    --color-direct: #16A34A;
+    --color-track: #E5E5E5;
+    --color-revisit: #8B5CF6;
 }
 
 * {
@@ -107,7 +107,7 @@ body {
     height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-    background: #dcd5c9;
+    background: #CCCCCC;
     border-radius: 8px;
 }
 ::-webkit-scrollbar-track {
@@ -123,7 +123,7 @@ body {
     }
 }
 .shimmer {
-    background: linear-gradient(90deg, #ede8e0 25%, #e2dbd2 50%, #ede8e0 75%);
+    background: linear-gradient(90deg, #F5F5F5 25%, #E5E5E5 50%, #F5F5F5 75%);
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;
 }

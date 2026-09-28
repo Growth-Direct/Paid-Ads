@@ -1,5 +1,4 @@
 import type { Scope } from './filters'
-import { mapSellerChannel } from './shared'
 
 // JAS 2026 seller targets: 7 channels × 9 grid micromarkets, transcribed from the growth
 // team's own planning workbook (Truva_JAS26_Planning_ChannelLevel.xlsx, "MM-WISE View
@@ -11,20 +10,11 @@ import { mapSellerChannel } from './shared'
 // newConv, oldConv, totalConv, spendInr. Static on purpose — replace wholesale each quarter
 // alongside the quarter dates, from the same sheet's next quarter tab.
 //
-// Refreshed 2026-09-24 against a re-exported copy of the same tab
-// (Truva_JAS26_Planning_ChannelLevel_Dashboard Sheet.xlsx) — six cells changed (leads/ql/
-// visits/conversions only, per the growth team's own scoped request; spendInr was left as
-// transcribed before, since spend wasn't part of that refresh): Paid Ads/Powai (leads, ql,
-// visits all up), Paid Ads/Bangalore (leads 200→48), Cold Outreach/Vegas (New Conv 2→1),
-// Overall/Powai (leads, ql, visits all up), Overall/Vegas (Conv reallocated New→Old, same
-// total), Overall/Bangalore (leads 748→576). Every other cell in the grid was diffed
-// programmatically against the new sheet and found unchanged.
-//
 // Each micromarket ALSO carries an 'Overall' row — the sheet's own pre-computed all-channels
 // total (same tab, rows 21-51/276, filtered to Channel = Overall), not the sum of the 7
 // channel rows below. The two are close but not always identical (e.g. Powai's own channel
-// rows now sum to 310 Leads, the sheet's Overall row says 309) — a rounding-carry difference
-// in the sheet itself, same reason lib/buyer/targets.ts's own 'ALL' row exists instead of an
+// rows sum to 304 Leads, the sheet's Overall row says 303) — a rounding-carry difference in
+// the sheet itself, same reason lib/buyer/targets.ts's own 'ALL' row exists instead of an
 // addition. `sellerTargetsFor` uses 'Overall' whenever no channel filter narrows the
 // selection, exactly mirroring that Buyer pattern, so an unfiltered target always matches
 // what the growth team sees on the sheet's own summary block.
@@ -55,7 +45,7 @@ type Row = [
 ]
 
 const ROWS: Row[] = [
-    ['Paid Ads', 'Powai', 31, 11, 7, 3, 10, 1, 0, 1, 118780],
+    ['Paid Ads', 'Powai', 25, 9, 6, 2, 8, 1, 0, 1, 97184],
     ['Paid Ads', 'Vegas', 59, 5, 3, 1, 4, 0, 1, 1, 30000],
     ['Paid Ads', 'Athens', 18, 3, 2, 0, 2, 0, 0, 0, 20000],
     ['Paid Ads', 'Glasgow', 52, 15, 9, 4, 13, 1, 0, 1, 127500],
@@ -63,7 +53,7 @@ const ROWS: Row[] = [
     ['Paid Ads', 'Boston', 11, 3, 2, 1, 3, 0, 0, 0, 36667],
     ['Paid Ads', 'Barcelona', 7, 2, 1, 0, 1, 0, 0, 0, 30000],
     ['Paid Ads', 'Singapore', 7, 2, 1, 0, 1, 0, 0, 0, 18000],
-    ['Paid Ads', 'Bangalore', 48, 10, 6, 0, 6, 0, 0, 0, 18238],
+    ['Paid Ads', 'Bangalore', 200, 10, 6, 0, 6, 0, 0, 0, 18238],
 
     ['3P', 'Powai', 88, 34, 8, 2, 10, 1, 0, 1, 13600],
     ['3P', 'Vegas', 52, 12, 3, 1, 4, 0, 0, 0, 10200],
@@ -116,7 +106,7 @@ const ROWS: Row[] = [
     ['Society WA Groups & Management Apps', 'Bangalore', 0, 0, 0, 0, 0, 0, 0, 0, 0],
 
     ['Cold Outreach', 'Powai', 100, 20, 13, 0, 13, 2, 0, 2, 60000],
-    ['Cold Outreach', 'Vegas', 65, 13, 7, 0, 7, 1, 0, 1, 39000],
+    ['Cold Outreach', 'Vegas', 65, 13, 7, 0, 7, 2, 0, 1, 39000],
     ['Cold Outreach', 'Athens', 70, 14, 10, 0, 10, 1, 0, 1, 700],
     ['Cold Outreach', 'Glasgow', 115, 23, 16, 0, 16, 1, 2, 3, 69000],
     ['Cold Outreach', 'Amsterdam', 150, 30, 21, 0, 21, 2, 0, 2, 90000],
@@ -127,49 +117,16 @@ const ROWS: Row[] = [
 
     // The sheet's own all-channels total per micromarket (Channel = 'Overall', JAS rows) — see
     // the note above. Used by sellerTargetsFor whenever no channel filter narrows the query.
-    ['Overall', 'Powai', 309, 125, 61, 9, 70, 9, 0, 9, 812380],
-    ['Overall', 'Vegas', 297, 96, 50, 5, 55, 5, 1, 6, 399200],
+    ['Overall', 'Powai', 303, 123, 60, 8, 68, 9, 0, 9, 790784],
+    ['Overall', 'Vegas', 297, 96, 50, 5, 55, 6, 0, 6, 399200],
     ['Overall', 'Athens', 143, 39, 23, 1, 24, 2, 0, 2, 87780],
     ['Overall', 'Glasgow', 342, 103, 57, 9, 66, 6, 3, 9, 651460],
     ['Overall', 'Amsterdam', 383, 98, 58, 1, 59, 5, 0, 5, 467536],
     ['Overall', 'Boston', 111, 40, 21, 4, 25, 1, 0, 1, 87027],
     ['Overall', 'Barcelona', 107, 37, 17, 0, 17, 1, 0, 1, 161040],
     ['Overall', 'Singapore', 143, 58, 24, 0, 24, 2, 0, 2, 155850],
-    ['Overall', 'Bangalore', 576, 104, 40, 0, 40, 1, 0, 1, 280038],
+    ['Overall', 'Bangalore', 748, 104, 40, 0, 40, 1, 0, 1, 280038],
 ]
-
-// The sheet's own "All clusters" summary row (same tab, Channel = 'Overall', Micromarket =
-// 'All clusters', JAS row) — the true no-filter total the growth team actually looks at.
-// Verified 2026-09-24 NOT to be a sum of the 9 named-micromarket 'Overall' rows above: this
-// row's own Leads/QL are computed on a different, non-additive basis (Leads carries some kind
-// of blended/forecast weighting even at this aggregate level, and doesn't decompose against
-// any combination of the visible rows tried — not "+Unattributed", not "+Bangalore/HABIBI",
-// not both). QL alone happens to reconcile closely against PAV+GLAM+Babu's own cluster
-// subtotals (596.67 here vs 596.67 summed) — i.e. this row excludes Bangalore/HABIBI and
-// Unattributed leads entirely — but Leads does not reconcile by the same logic, so this row is
-// transcribed as its own independent total rather than derived. Summing the 9 micromarkets
-// instead gives a materially different LTQL (29% vs this row's 14.4%), confirmed with the user
-// as the wrong number for the true unfiltered case — this row is now used there instead.
-// The sheet's own 'All clusters' row (see the doc comment below) PLUS the Overall/Bangalore
-// row on top — corrected 2026-09-24: the truly-unfiltered case must include HABIBI/Bangalore
-// sellers, since the ACHIEVED figures it's compared against always do (no filter means every
-// seller everywhere), and every OTHER channel's own "all clusters" total is confirmed to mean
-// "all clusters + Bangalore" (e.g. Cold Outreach: 131 + 50 = 181, confirmed live with the
-// user). The first version of this fix used the 'All clusters' row alone (4,147 Leads), missing
-// Bangalore's own 576 — the same gap just found and fixed for every other channel, applied here
-// too for consistency. Overall/Bangalore JAS: Leads 576, QL 104, Visits 40/0/40, Conv 1/0/1,
-// Spend 280,038.
-const ALL_CLUSTERS_TOTAL: Cell = {
-    leads: 4723,
-    ql: 701,
-    newVisits: 351,
-    oldVisits: 29,
-    totalVisits: 380,
-    newConv: 32,
-    oldConv: 4,
-    totalConv: 36,
-    spendInr: 3285375,
-}
 
 interface Cell {
     leads: number
@@ -200,65 +157,19 @@ for (const [channel, mm, leads, ql, nV, oV, tV, nC, oC, tC, spendInr] of ROWS) {
     ALL_MICROMARKETS.add(mm)
 }
 
-// Each channel's own "All clusters" row (same tab, Channel = that channel's own name, JAS row,
-// Micromarket = 'All clusters') — read directly off the sheet, the same way ALL_CLUSTERS_TOTAL
-// is for Overall. Replaced the previous "sum the 8 named micromarkets + a separately-maintained
-// per-channel Unattributed constant" reconstruction 2026-09-24, per an explicit growth-team
-// report: "jas targets not matching for channels... Unattributed has been skipped. Only use all
-// clusters targets." Re-verified against a fresh extract of the same sheet/tab (Channel =
-// <name>, Micromarket = 'All clusters', Quarter = 'JAS'):
-//
-// | Channel | Spends | Leads | QL | Old/New/Total Visits | Old/New/Total Conv |
-// |---|---|---|---|---|---|
-// | Paid Ads | 603,132 | 1,452 | 55 | 10/34/44 | 1/3/4 |
-// | 3P | 55,505 | 371 | 117 | 6/41/47 | 1/1/2 |
-// | Offline Branding | 1,275,000 | 140 | 92 | 4/42/46 | 0/6/6 |
-// | Referral & WOM | 720,000 | 79 | 47 | 0/30/30 | 0/6/6 |
-// | Organic | 0 | 1,401 | 122 | 7/61/68 | 0/5/5 |
-// | Society WA Groups & Management Apps | 0 | 48 | 33 | 2/20/22 | 0/2/2 |
-// | Cold Outreach | 351,700 | 655 | 131 | 0/83/83 | 2/8/10 |
-//
-// Combined with the channel's own Bangalore row on top (in sellerTargetsFor, not baked into
-// these constants) — same "all clusters + Bangalore" combination ALL_CLUSTERS_TOTAL uses for
-// Overall. First shipped WITHOUT that addition (matching this cell alone); corrected the same
-// day per the user ("offline branding is 140, was supposed to be 193 with blr") — a
-// whole-Channel pick's achieved figures always include that channel's Bangalore/HABIBI
-// sellers (no micromarket filter means every micromarket), so its target must too. 140
-// (Offline Branding's own row above) + 52 (its own Bangalore row, from ROWS) = 192 — one off
-// the user's own "193", within the sheet's usual rounding noise (the row above is itself a
-// rounded transcription of 140.39).
-const CHANNEL_ALL_CLUSTERS: Partial<Record<string, Cell>> = {
-    'Paid Ads': { leads: 1452, ql: 55, newVisits: 34, oldVisits: 10, totalVisits: 44, newConv: 3, oldConv: 1, totalConv: 4, spendInr: 603132 },
-    '3P': { leads: 371, ql: 117, newVisits: 41, oldVisits: 6, totalVisits: 47, newConv: 1, oldConv: 1, totalConv: 2, spendInr: 55505 },
-    'Offline Branding': { leads: 140, ql: 92, newVisits: 42, oldVisits: 4, totalVisits: 46, newConv: 6, oldConv: 0, totalConv: 6, spendInr: 1275000 },
-    'Referral & WOM': { leads: 79, ql: 47, newVisits: 30, oldVisits: 0, totalVisits: 30, newConv: 6, oldConv: 0, totalConv: 6, spendInr: 720000 },
-    Organic: { leads: 1401, ql: 122, newVisits: 61, oldVisits: 7, totalVisits: 68, newConv: 5, oldConv: 0, totalConv: 5, spendInr: 0 },
-    'Society WA Groups & Management Apps': {
-        leads: 48,
-        ql: 33,
-        newVisits: 20,
-        oldVisits: 2,
-        totalVisits: 22,
-        newConv: 2,
-        oldConv: 0,
-        totalConv: 2,
-        spendInr: 0,
-    },
-    'Cold Outreach': { leads: 655, ql: 131, newVisits: 83, oldVisits: 0, totalVisits: 83, newConv: 8, oldConv: 2, totalConv: 10, spendInr: 351700 },
-}
-
-// The four real Truva_Micromarket values (CLUSTER_TREE's HABIBI group) with no grid row of
-// their own — see the HABIBI note up top. Confirmed with the user 2026-09-24: this maps
-// "cluster-wise", the same way a lone raw Source maps to its parent Channel below — ANY one of
-// these picked, alone or with others, resolves to the grid's single combined 'Bangalore' row,
-// not just a whole-cluster pick. There is no finer-grained target data to fall back to, so the
-// enclosing cluster's own combined figure is the best honest answer, same reasoning as the
-// source-to-channel fallback.
-const HABIBI_MICROMARKETS = ['Helsinki', 'Berlin', 'Hong Kong', 'Ibiza']
+// The three real Truva_Micromarket values with no grid row of their own — see the HABIBI
+// note up top. Resolved to the grid's single 'Bangalore' row ONLY when every one of them is
+// requested together (a whole-cluster pick); a partial pick (e.g. Helsinki alone) has no
+// honest answer in this data and stays uncovered.
+// Deliberately still the original three, not the four CLUSTER_TREE now carries: Ibiza joined
+// the cluster on 2026-09-16 and has no grid row of its own. Requiring it here would stop a
+// Helsinki+Berlin+Hong Kong pick resolving to Bangalore, which it should still do. Ticking the
+// whole cluster passes all four, satisfies this check on the three, and leaves Ibiza to
+// contribute nothing — which is right, since the grid holds no target for it.
+const HABIBI_MICROMARKETS = ['Helsinki', 'Berlin', 'Hong Kong']
 function resolveMicromarkets(requested: string[]): string[] {
-    if (!HABIBI_MICROMARKETS.some((m) => requested.includes(m))) return requested
-    const withoutHabibi = requested.filter((m) => !HABIBI_MICROMARKETS.includes(m))
-    return withoutHabibi.includes('Bangalore') ? withoutHabibi : [...withoutHabibi, 'Bangalore']
+    if (!HABIBI_MICROMARKETS.every((m) => requested.includes(m))) return requested
+    return [...requested.filter((m) => !HABIBI_MICROMARKETS.includes(m)), 'Bangalore']
 }
 
 export interface SellerTargets {
@@ -301,61 +212,9 @@ export function scoped(scope: Scope[], newVal: number, oldVal: number, totalVal:
  *  unfiltered total). A named micromarket selection is resolved through resolveMicromarkets
  *  first, so a whole-HABIBI pick (Helsinki + Berlin + Hong Kong, exactly how the picker ticks a
  *  cluster) still finds the grid's combined Bangalore row. */
-/** True when a Cluster/MM selection — once resolved (HABIBI members collapsed to Bangalore) —
- *  covers every real grid micromarket, i.e. ticking every checkbox in the picker. This must
- *  read identically to ticking none of them (both mean "no restriction"), but before this fix
- *  it silently fell through to the per-cell-sum branch instead of the "no filter" shortcut,
- *  giving a materially different number: confirmed with the user 2026-09-24 after "how is the
- *  4723 when every cluster is deselected and 2411 when all clusters and unmapped are selected.
- *  should be the same" — summing all 9 named-micromarket cells (2,411) is not, and per
- *  ALL_CLUSTERS_TOTAL's own doc comment can never be made to reconcile with, the sheet's own
- *  independent "All clusters" total (4,723 combined with Bangalore). 'Unmapped' being also
- *  ticked (or not) makes no numeric difference either way — it has no cell of its own in the
- *  grid, so it contributes 0 to a per-cell sum regardless; only the 9 real micromarkets matter
- *  for this check. */
-function selectionCoversAllMicromarkets(resolvedMicromarkets: string[]): boolean {
-    const set = new Set(resolvedMicromarkets)
-    return [...ALL_MICROMARKETS].every((m) => set.has(m))
-}
-
-export function sellerTargetsFor(opts: { channels?: string[]; micromarkets?: string[]; sources?: string[] }): SellerTargets {
-    const resolvedMicromarkets = opts.micromarkets?.length ? resolveMicromarkets(opts.micromarkets) : [...ALL_MICROMARKETS]
-    // "Effectively no Cluster/MM filter" — either nothing was picked, or enough was picked that
-    // it covers the whole grid anyway (see selectionCoversAllMicromarkets's doc comment).
-    const microFilterIsEmpty = !opts.micromarkets?.length || selectionCoversAllMicromarkets(resolvedMicromarkets)
-
-    // The truly unfiltered case (no Channel, no Source, and no Cluster/MM filter — or one that
-    // covers everything anyway) uses the sheet's own 'All clusters' row directly instead of
-    // summing the 9 micromarkets below — see ALL_CLUSTERS_TOTAL's own doc comment for why the
-    // two numbers genuinely disagree.
-    if (!opts.channels?.length && microFilterIsEmpty && !opts.sources?.length) {
-        return { ...ALL_CLUSTERS_TOTAL, covered: true }
-    }
-    // A raw source ticked without its own parent Channel checkbox (e.g. "Society Data - Cold
-    // Call" without "Cold Outreach") maps to that source's own parent Channel's target via
-    // mapSellerChannel — confirmed with the user 2026-09-24, the same "map to the nearest thing
-    // that DOES have a cell" principle as HABIBI's own micromarket-to-cluster fallback below.
-    // Only consulted when `channels` itself is empty — an explicit whole-Channel pick always
-    // wins, mirroring sellerMatchesChannel's own "source narrows within channel" precedence on
-    // the achieved side.
-    const channels: string[] = opts.channels?.length
-        ? opts.channels
-        : opts.sources?.length
-          ? [...new Set(opts.sources.map((s) => mapSellerChannel(s)).filter((c) => c != null))]
-          : ['Overall']
-    const micromarkets = resolvedMicromarkets
-    // Whether to read each channel's own CHANNEL_ALL_CLUSTERS row directly below, instead of
-    // summing the 9 named-micromarket cells — whenever there's no Cluster/MM filter narrowing
-    // the result (or, as above, one that covers the whole grid anyway). Applies the same way
-    // whether `channels` came from an explicit Channel tick or a lone-Source fallback above —
-    // earlier this session the two were deliberately split (a lone Source didn't get the
-    // channel's Unattributed leads folded in, since crediting them to one specific raw source
-    // would invent data that doesn't exist), but that distinction no longer applies:
-    // CHANNEL_ALL_CLUSTERS is read verbatim, not reconstructed from parts, so there's nothing
-    // left to selectively fold in. A lone Source under a channel now reads the exact same "All
-    // clusters" target as ticking that whole channel directly, same "nearest thing that DOES
-    // have a cell" principle as the mapping above.
-    const useChannelAllClusters = microFilterIsEmpty
+export function sellerTargetsFor(opts: { channels?: string[]; micromarkets?: string[] }): SellerTargets {
+    const channels = opts.channels?.length ? opts.channels : ['Overall']
+    const micromarkets = opts.micromarkets?.length ? resolveMicromarkets(opts.micromarkets) : [...ALL_MICROMARKETS]
 
     let leads = 0
     let ql = 0
@@ -368,29 +227,6 @@ export function sellerTargetsFor(opts: { channels?: string[]; micromarkets?: str
     let spendInr = 0
     let covered = false
     for (const c of channels) {
-        if (useChannelAllClusters) {
-            // The channel's own "All clusters" row PLUS its own Bangalore row on top — mirrors
-            // ALL_CLUSTERS_TOTAL's own "All clusters + Bangalore" combination exactly. Corrected
-            // 2026-09-25 per the user ("offline branding is 140, was supposed to be 193 with
-            // blr") — a whole-Channel pick's achieved figures always include that channel's
-            // Bangalore/HABIBI sellers (no micromarket filter means every micromarket), so its
-            // target must too, same reasoning as the Overall case.
-            const cell = CHANNEL_ALL_CLUSTERS[c]
-            const bangalore = CELL.get(`${c}|Bangalore`)
-            if (cell) {
-                covered = true
-                leads += cell.leads + (bangalore?.leads ?? 0)
-                ql += cell.ql + (bangalore?.ql ?? 0)
-                newVisits += cell.newVisits + (bangalore?.newVisits ?? 0)
-                oldVisits += cell.oldVisits + (bangalore?.oldVisits ?? 0)
-                totalVisits += cell.totalVisits + (bangalore?.totalVisits ?? 0)
-                newConv += cell.newConv + (bangalore?.newConv ?? 0)
-                oldConv += cell.oldConv + (bangalore?.oldConv ?? 0)
-                totalConv += cell.totalConv + (bangalore?.totalConv ?? 0)
-                spendInr += cell.spendInr + (bangalore?.spendInr ?? 0)
-            }
-            continue
-        }
         for (const m of micromarkets) {
             const cell = CELL.get(`${c}|${m}`)
             if (!cell) continue

@@ -11,6 +11,15 @@ export interface LeadListItem {
     createdAt: string
 }
 
+/** Non-Unique Count / Lead Status from Lead_Source_History, for one Campaign/AdSet/Ad/
+ *  Property/Micromarket cut — EXTRA CONTEXT, not part of the funnel. Counts every LSH
+ *  engagement (any Serial_Number), so it does not reconcile with `leads.length` above.
+ *  See lib/buyer/types.ts's AttributionExtra. */
+export interface ExtraInfo {
+    nonUniqueCount: number
+    statusBreakdown: Partial<Record<string, number>>
+}
+
 interface Props {
     title: string
     subtitle?: string
@@ -19,6 +28,8 @@ interface Props {
     /** Zoho module the deep link points at. Defaults to Leads (buyer); the seller tab passes
      *  'Sellers'. Non-breaking for existing callers. */
     zohoModule?: string
+    /** Optional — only set for the Campaign/AdSet/Ad/Property/Micromarket breakdown charts. */
+    extraInfo?: ExtraInfo
 }
 
 function fmtDate(iso: string): string {
@@ -27,7 +38,7 @@ function fmtDate(iso: string): string {
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function LeadListModal({ title, subtitle, leads, onClose, zohoModule = 'Leads' }: Props) {
+export default function LeadListModal({ title, subtitle, leads, onClose, zohoModule = 'Leads', extraInfo }: Props) {
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if (e.key === 'Escape') onClose()
@@ -42,7 +53,7 @@ export default function LeadListModal({ title, subtitle, leads, onClose, zohoMod
             style={{
                 position: 'fixed',
                 inset: 0,
-                background: 'rgba(30, 27, 21, 0.4)',
+                background: 'rgba(0, 0, 0, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -65,14 +76,14 @@ export default function LeadListModal({ title, subtitle, leads, onClose, zohoMod
                 <div
                     style={{
                         padding: '18px 22px',
-                        borderBottom: '1px solid #eee8dd',
+                        borderBottom: '1px solid #CCCCCC',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                     }}>
                     <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#23211e' }}>{title}</div>
-                        {subtitle && <div style={{ fontSize: 12, color: '#9a948a', marginTop: 2 }}>{subtitle}</div>}
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#000000' }}>{title}</div>
+                        {subtitle && <div style={{ fontSize: 12, color: '#333333', marginTop: 2 }}>{subtitle}</div>}
                     </div>
                     <button
                         onClick={onClose}
@@ -81,7 +92,7 @@ export default function LeadListModal({ title, subtitle, leads, onClose, zohoMod
                             background: 'none',
                             cursor: 'pointer',
                             fontSize: 18,
-                            color: '#9a948a',
+                            color: '#333333',
                             lineHeight: 1,
                             padding: 4,
                         }}
@@ -90,9 +101,36 @@ export default function LeadListModal({ title, subtitle, leads, onClose, zohoMod
                     </button>
                 </div>
 
+                {extraInfo && (
+                    <div
+                        style={{
+                            padding: '10px 22px',
+                            background: '#F5F5F5',
+                            borderBottom: '1px solid #CCCCCC',
+                            fontSize: 11.5,
+                            color: '#333333',
+                        }}>
+                        <div style={{ fontWeight: 600, color: '#333333', marginBottom: 3 }}>
+                            From Lead Source History — not part of the funnel above
+                        </div>
+                        <div>
+                            <strong>{extraInfo.nonUniqueCount}</strong> non-unique enquir{extraInfo.nonUniqueCount === 1 ? 'y' : 'ies'} (every
+                            engagement counted, including re-enquiries)
+                        </div>
+                        {Object.keys(extraInfo.statusBreakdown).length > 0 && (
+                            <div style={{ marginTop: 2 }}>
+                                {Object.entries(extraInfo.statusBreakdown)
+                                    .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+                                    .map(([status, count]) => `${status}: ${count}`)
+                                    .join(' · ')}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div style={{ overflowY: 'auto', padding: '6px 0' }}>
                     {leads.length === 0 ? (
-                        <div style={{ padding: '32px 22px', textAlign: 'center', color: '#b3ada2', fontSize: 13 }}>
+                        <div style={{ padding: '32px 22px', textAlign: 'center', color: '#666666', fontSize: 13 }}>
                             No leads in this bucket
                         </div>
                     ) : (
@@ -105,21 +143,21 @@ export default function LeadListModal({ title, subtitle, leads, onClose, zohoMod
                                     justifyContent: 'space-between',
                                     gap: 12,
                                     padding: '10px 22px',
-                                    borderBottom: '1px solid #f4f1ea',
+                                    borderBottom: '1px solid #F5F5F5',
                                 }}>
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                     <div
                                         style={{
                                             fontSize: 13,
                                             fontWeight: 600,
-                                            color: '#23211e',
+                                            color: '#000000',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
                                         }}>
                                         {l.name || '—'}
                                     </div>
-                                    <div style={{ fontSize: 11.5, color: '#9a948a', marginTop: 2 }}>
+                                    <div style={{ fontSize: 11.5, color: '#333333', marginTop: 2 }}>
                                         {l.source} · {l.status} · {fmtDate(l.createdAt)}
                                     </div>
                                 </div>

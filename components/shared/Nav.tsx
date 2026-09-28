@@ -3,7 +3,7 @@
 import { useUser } from '@auth0/nextjs-auth0'
 import { useEffect, useRef, useState } from 'react'
 
-export type NavView = 'buyer' | 'seller' | 'procurement'
+export type NavView = 'buyer' | 'seller' | 'budget'
 
 interface NavProps {
     activeView: NavView
@@ -13,7 +13,7 @@ interface NavProps {
 const tabs: { key: NavView; label: string }[] = [
     { key: 'buyer', label: 'Buyer' },
     { key: 'seller', label: 'Seller' },
-    { key: 'procurement', label: 'Procurement' },
+    { key: 'budget', label: 'Budget Pacing' },
 ]
 
 export default function Nav({ activeView, onViewChange }: NavProps) {
@@ -43,8 +43,8 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
     return (
         <div
             style={{
-                borderBottom: '1px solid #e6e0d6',
-                background: '#fbf9f4',
+                borderBottom: '1px solid #CCCCCC',
+                background: '#FFFFFF',
                 position: 'sticky',
                 top: 0,
                 zIndex: 50,
@@ -61,13 +61,13 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <img src="/truva-logo-black.svg" alt="Truva" width={28} height={28} />
-                        <span style={{ width: 1, height: 18, background: '#d8d1c5' }} />
+                        <span style={{ width: 1, height: 18, background: '#CCCCCC' }} />
                         <span
                             style={{
                                 fontSize: 13,
                                 fontWeight: 600,
                                 letterSpacing: '0.02em',
-                                color: '#3a3833',
+                                color: '#000000',
                             }}>
                             Growth Reporting
                         </span>
@@ -79,13 +79,13 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
                                 key={tab.key}
                                 onClick={() => onViewChange(tab.key)}
                                 style={{
-                                    background: activeView === tab.key ? '#f0ebe3' : 'none',
-                                    border: activeView === tab.key ? '1px solid #e2ddd7' : '1px solid transparent',
+                                    background: activeView === tab.key ? '#E6F0FF' : 'none',
+                                    border: activeView === tab.key ? '1px solid #0067FF' : '1px solid transparent',
                                     borderRadius: 8,
                                     padding: '6px 14px',
                                     fontSize: 13,
                                     fontWeight: activeView === tab.key ? 600 : 400,
-                                    color: activeView === tab.key ? '#23211e' : '#8a857b',
+                                    color: activeView === tab.key ? '#0067FF' : '#333333',
                                     cursor: 'pointer',
                                     fontFamily: 'inherit',
                                     transition: 'all 0.15s',
@@ -104,7 +104,7 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
                             height: 32,
                             borderRadius: '50%',
                             overflow: 'hidden',
-                            background: '#e7e0d4',
+                            background: '#F5F5F5',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -123,7 +123,7 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
                                 referrerPolicy="no-referrer"
                             />
                         ) : (
-                            <span style={{ fontWeight: 600, color: '#6b665e', fontSize: 12 }}>{initials}</span>
+                            <span style={{ fontWeight: 600, color: '#333333', fontSize: 12 }}>{initials}</span>
                         )}
                     </button>
 
@@ -134,7 +134,7 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
                                 top: 40,
                                 right: 0,
                                 background: '#fff',
-                                border: '1px solid #e6e0d6',
+                                border: '1px solid #CCCCCC',
                                 borderRadius: 10,
                                 boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                                 padding: '6px',
@@ -147,12 +147,12 @@ export default function Nav({ activeView, onViewChange }: NavProps) {
                                     display: 'block',
                                     padding: '8px 14px',
                                     fontSize: 13,
-                                    color: '#3a3833',
+                                    color: '#000000',
                                     textDecoration: 'none',
                                     borderRadius: 6,
                                     fontFamily: 'inherit',
                                 }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f4f1ea')}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#F5F5F5')}
                                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
                                 Sign out
                             </a>

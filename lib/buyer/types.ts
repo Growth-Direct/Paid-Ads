@@ -80,6 +80,20 @@ export interface MicromarketPoint {
     leadIds: Partial<Record<string, string[]>>
 }
 
+// Added 2026-09-23. EXTRA CONTEXT for a Campaign/AdSet/Ad/Property/Micromarket cut — NOT
+// part of the funnel. Sourced from every Lead_Source_History touch (any Serial_Number) in
+// the selected window, so a lead who re-enquired 3 times about a campaign counts 3 times
+// here, unlike every unique/deduped funnel number elsewhere on this tab. See
+// metric-definitions.md.
+export interface AttributionExtra {
+    /** Every LSH engagement row for this dimension value in the selected window — not
+     *  deduped by lead. */
+    nonUniqueCount: number
+    /** Lead_Status as recorded ON THOSE ENGAGEMENT ROWS (i.e. status at the time of that
+     *  touch), not each lead's current status. */
+    statusBreakdown: Partial<Record<string, number>>
+}
+
 export interface ReasonPoint {
     reason: string
     count: number
@@ -110,14 +124,6 @@ export interface TwoWeekRow {
      *  grid paces at a constant run-rate, so the upcoming 2 weeks' target is the identical
      *  number as the last 2 weeks' was, just with no "achieved" yet to compare it to. */
     nextW2Target: number | null
-    /** An alternative to nextW2Target: instead of a flat run-rate share, spreads whatever's
-     *  LEFT to hit qTargetFull (qTargetFull - qAchieved) evenly over the days remaining in the
-     *  window, then takes a 14-day slice — steeper than nextW2Target when behind pace, easier
-     *  when ahead (floored at 0). Rate metrics (LTQL %, QLTV %, CPL, CPQL, CPV, CAC) skip this
-     *  math and just carry qTargetFull unchanged, same as nextW2Target already does for them.
-     *  Optional and Seller-only for now — see lib/seller/derive.ts and
-     *  components/buyer/TwoWeekTable.tsx's showProRataNextTarget prop. */
-    nextW2TargetProRata?: number | null
 }
 
 export interface HouseWarmPoint {
@@ -144,6 +150,24 @@ export interface FunnelArrowPoint {
 export interface OverallFunnelData {
     blocks: FunnelBlockPoint[]
     arrows: FunnelArrowPoint[]
+    /** Added 2026-09-26: every Lead_Source_History touch (any Serial_Number) in the funnel's
+     *  own window whose Lead_Status AT THE TIME OF THAT TOUCH falls in QUALIFIED_STATUSES —
+     *  same "status at time of touch" reading as AttributionExtra.statusBreakdown, summed
+     *  once instead of split by dimension. Rendered as a small info box beside the "Total
+     *  Leads" tile (itself the same touch table's raw count) — EXTRA CONTEXT, not part of the
+     *  block/arrow funnel chain, so it lives here as a sibling field rather than a blocks[]
+     *  entry (which would shift every `blocks.find(...)` assertion in derive.golden.test.ts). */
+    lshQualifiedLeads: number
+}
+
+/** Added 2026-09-26: a single ratio per week — backs the WoW CPL/CPQL/CPV cost-per-week charts.
+ *  `value` is null whenever that week's denominator (leads/qualified leads/visits) is 0, same
+ *  null-safe convention as every other cost-per-X ratio on this tab (a 0 would read as
+ *  free/zero-cost, which is misleading). */
+export interface CostWeekPoint {
+    weekStart: string
+    weekLabel: string
+    value: number | null
 }
 
 export const TOTAL_VISITS_RAW_TARGET_MULTIPLIER = 1.2
@@ -215,6 +239,69 @@ export interface BuyerReportData {
 
     // 11: per live property
     visitedByEverWarm: HouseWarmPoint[]
+
+    // Added 2026-09-23: Leads/Qualified Leads by Campaign, Ad Set, Ad and Property, from the
+    // lead's first-touch Lead_Source_History row (same attribution as the cost block, a
+    // second consumer of it — see LeadFact's attributedCampaign/etc. comment). A lead with
+    // no ad campaign at all (Direct, CP, organic, referral) buckets under "Not Applicable",
+    // never dropped. Micromarket-for-leads uses the lead's own micromarketPrimary — the
+    // same field/convention qualifiedByCluster already uses — not LSH attribution, since
+    // that's independently available and already verified for every lead, not just its
+    // first touch. See metric-definitions.md for the full definition, including the
+    // engagement-level (not lead-level) meaning of "property" here.
+    leadsByCampaign: WeekSeriesPoint[]
+    qualifiedByCampaign: WeekSeriesPoint[]
+    leadsByAdSet: WeekSeriesPoint[]
+    qualifiedByAdSet: WeekSeriesPoint[]
+    leadsByAd: WeekSeriesPoint[]
+    qualifiedByAd: WeekSeriesPoint[]
+    leadsByProperty: WeekSeriesPoint[]
+    qualifiedByProperty: WeekSeriesPoint[]
+    leadsByMicromarket: WeekSeriesPoint[]
+    qualifiedByMicromarket: WeekSeriesPoint[]
+
+    // Added 2026-09-23: "Non-Unique Count" + "Lead Status" extra info for each cut above —
+    // NOT part of the funnel, shown in that cut's drill-down alongside the (unique) lead
+    // list. Keyed by the exact same dimension-value strings the five leadsByX series above
+    // use (including the "Not Applicable"/"Unmapped"/"Unknown" placeholders), over the
+    // window currently selected by the time filter. See AttributionExtra and
+    // metric-definitions.md.
+    lshExtraByDimension: {
+        campaign: Record<string, AttributionExtra>
+        adSet: Record<string, AttributionExtra>
+        ad: Record<string, AttributionExtra>
+        property: Record<string, AttributionExtra>
+        micromarket: Record<string, AttributionExtra>
+    }
+
+    // Added 2026-09-26: WoW trend charts for the growth team's requested page reorder. No new
+    // metric definitions — each reuses an existing, already-defined count/ratio, just charted
+    // weekly instead of summed once. See metric-definitions.md.
+
+    /** Every Lead_Source_History touch in the window, by week — the same count
+     *  `computeFunnelActuals`'s `totalLeadsRaw` sums once for the funnel's "Total Leads" tile,
+     *  bucketed weekly instead. Single series (no dimension split). */
+    lshCountByWeek: WeekSeriesPoint[]
+    /** Same touches, restricted to ones whose Lead_Status AT THAT TOUCH is in
+     *  QUALIFIED_STATUSES — the same reading backing `overallFunnel.lshQualifiedLeads`,
+     *  bucketed weekly instead. Single series. */
+    lshQualifiedByWeek: WeekSeriesPoint[]
+
+    /** Same dedup/filter rules as uniqueVisitsBySource, bucketed by the LEAD's created week
+     *  instead of the visit's own week — "Unique Visits (Visit based on created time)". */
+    uniqueVisitsByLeadCreatedWeek: WeekSeriesPoint[]
+    /** Same dedup/filter rules as uniqueGrossVisitsBySource (dedupes on person+property, not
+     *  person alone), bucketed by the LEAD's created week instead of the visit's own week —
+     *  "Gross Visits (Visit based on created time)". */
+    uniqueGrossVisitsByLeadCreatedWeek: WeekSeriesPoint[]
+
+    /** Weekly Spend ÷ that week's Total Unique Leads (the same leadsBySource population). */
+    cplByWeek: CostWeekPoint[]
+    /** Weekly Spend ÷ that week's Qualified Leads (the same qualifiedBySource population). */
+    cpqlByWeek: CostWeekPoint[]
+    /** Weekly Spend ÷ that week's count from uniqueVisitsByLeadCreatedWeek — per the growth
+     *  team's own framing, "WOW CPV based on Unique Visits (Visit based on created time)". */
+    cpvByWeek: CostWeekPoint[]
 
     leadsById: Record<string, LeadListItem>
 }

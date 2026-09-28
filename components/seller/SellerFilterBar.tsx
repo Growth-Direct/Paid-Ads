@@ -4,24 +4,43 @@ import {
     Dropdown,
     MONO,
     NestedList,
-    NestedListSelectAllFooter,
     type OptionGroup,
     Pill,
+    Row,
     SectionLabel,
     dateInputStyle,
 } from '@/components/shared/FilterControls'
 import { type TimeRange, customRange, fromDateInput, isCustom, toDateInput } from '@/lib/buyer/timePresets'
-import type { SellerFilters } from '@/lib/seller/filters'
+import type { Scope, SellerFilters } from '@/lib/seller/filters'
 import { useEffect, useState } from 'react'
-import { ScopeFilterDropdown as ScopeDropdown } from './ScopeFilterDropdown'
 
 // The seller filter bar. Same controls as the buyer bar, from the same shared primitives:
 // Time, a nested Cluster / MM picker and a nested Channel / Source picker. The two extra
 // dimensions are seller-only — the New/Old visit and conversion scopes the Metabase dashboard
 // carries as pills. Metabase defaults each to New only; this dashboard defaults to both (changed
-// 2026-09-09, per an explicit growth-team request — see EMPTY_SELLER_FILTERS). ScopeDropdown
-// itself now lives in ./ScopeFilterDropdown, shared with PostVisitTatBar and
-// MicromarketStatusBar's own chart-local New/Old toggles.
+// 2026-09-09, per an explicit growth-team request — see EMPTY_SELLER_FILTERS).
+
+function ScopeDropdown({
+    label,
+    scope,
+    onChange,
+}: {
+    label: string
+    scope: Scope[]
+    onChange: (next: Scope[]) => void
+}) {
+    const summary = scope.length === 0 ? 'None' : scope.length === 2 ? 'Overall' : scope[0]!
+    const toggle = (s: Scope) => onChange(scope.includes(s) ? scope.filter((x) => x !== s) : [...scope, s])
+    // A non-default scope (anything other than both New and Old) marks the pill active.
+    const active = scope.length !== 2
+    return (
+        <Dropdown label={label} summary={summary} active={active} width={180}>
+            {(['New', 'Old'] as const).map((s) => (
+                <Row key={s} label={s} checked={scope.includes(s)} onToggle={() => toggle(s)} />
+            ))}
+        </Dropdown>
+    )
+}
 
 export default function SellerFilterBar({
     filters,
@@ -101,10 +120,10 @@ export default function SellerFilterBar({
                 position: 'sticky',
                 top: 65,
                 zIndex: 45,
-                background: '#f4f1ea',
+                background: '#FFFFFF',
                 margin: '0 -40px',
                 padding: '14px 40px',
-                borderBottom: '1px solid #e6e0d6',
+                borderBottom: '1px solid #CCCCCC',
             }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Dropdown
@@ -122,9 +141,9 @@ export default function SellerFilterBar({
                                         flex: 1,
                                         padding: '6px 8px',
                                         borderRadius: 6,
-                                        border: `1px solid ${filters.grain === g ? '#3a7d5d' : '#e0dad0'}`,
-                                        background: filters.grain === g ? '#eef4f0' : 'transparent',
-                                        color: filters.grain === g ? '#2f6349' : '#6b655c',
+                                        border: `1px solid ${filters.grain === g ? '#0067FF' : '#CCCCCC'}`,
+                                        background: filters.grain === g ? '#E6F0FF' : 'transparent',
+                                        color: filters.grain === g ? '#0067FF' : '#333333',
                                         fontFamily: MONO,
                                         fontSize: 11,
                                         cursor: 'pointer',
@@ -142,7 +161,7 @@ export default function SellerFilterBar({
                             onChange={(e) => setCustomStart(e.target.value)}
                             style={dateInputStyle}
                         />
-                        <span style={{ color: '#b3ada2', fontSize: 11 }}>to</span>
+                        <span style={{ color: '#666666', fontSize: 11 }}>to</span>
                         <input
                             type="date"
                             value={customEnd}
@@ -163,7 +182,7 @@ export default function SellerFilterBar({
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: 'none',
-                                background: customStart && customEnd && customStart < customEnd ? '#3a7d5d' : '#d8d2c8',
+                                background: customStart && customEnd && customStart < customEnd ? '#0067FF' : '#E5E5E5',
                                 color: '#fff',
                                 fontFamily: MONO,
                                 fontSize: 11,
@@ -198,16 +217,7 @@ export default function SellerFilterBar({
                     </div>
                 </Dropdown>
 
-                <Dropdown
-                    label="Cluster / MM"
-                    summary={mmSummary}
-                    active={filters.micromarkets.length > 0}
-                    footer={
-                        <NestedListSelectAllFooter
-                            groups={clusterOptions}
-                            onChange={(clusters, micromarkets) => onChange({ ...filters, clusters, micromarkets })}
-                        />
-                    }>
+                <Dropdown label="Cluster / MM" summary={mmSummary} active={filters.micromarkets.length > 0}>
                     <NestedList
                         groups={clusterOptions}
                         selectedParents={filters.clusters}
@@ -216,16 +226,7 @@ export default function SellerFilterBar({
                     />
                 </Dropdown>
 
-                <Dropdown
-                    label="Channel"
-                    summary={srcSummary}
-                    active={filters.sources.length > 0}
-                    footer={
-                        <NestedListSelectAllFooter
-                            groups={sourceOptions}
-                            onChange={(channels, sources) => onChange({ ...filters, channels, sources })}
-                        />
-                    }>
+                <Dropdown label="Channel" summary={srcSummary} active={filters.sources.length > 0}>
                     <NestedList
                         groups={sourceOptions}
                         selectedParents={filters.channels}
@@ -265,7 +266,7 @@ export default function SellerFilterBar({
                             borderRadius: 8,
                             border: '1px solid transparent',
                             background: 'transparent',
-                            color: '#9a948a',
+                            color: '#333333',
                             fontFamily: MONO,
                             fontSize: 11.5,
                             cursor: 'pointer',

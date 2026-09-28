@@ -5,7 +5,6 @@ import type { WeekSeriesPoint } from '@/lib/buyer/types'
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { LEGEND_STYLE, legendFormatter } from '@/components/shared/chartLegend'
-import { Dropdown, MONO, Row } from '@/components/shared/FilterControls'
 import { colorFor as buyerColorFor } from './palette'
 
 type StackMode = 'count' | 'percent'
@@ -40,12 +39,6 @@ interface Props {
      *  merged bi-weekly point still renders one bar per fortnight (the values-actually-summed
      *  view wins) rather than trying to visually pair two already-merged fortnights together. */
     allowBiWeeklyToggle?: boolean
-    /** Renders a small "Statuses" checklist above the chart, letting the reader hide specific
-     *  series from the stack — local to this one chart instance, defaulting to every status
-     *  shown (identical to today's behavior). Hiding a status removes it from the stack, the
-     *  legend, both tooltips, and the grand-total/percent-of-total math for the remaining ones —
-     *  it never touches what was fetched or any other chart/filter on the page. */
-    allowStatusFilter?: boolean
     /** Changes how weeks club into fortnights: a partial week (the stub a mid-week quarter
      *  start leaves, and the running week at the end) stands alone, and the full weeks between
      *  them pair up — so every fortnight begins on the first FULL week and the grouping stays
@@ -73,7 +66,7 @@ function ToggleGroup<T extends string>({
     onChange: (v: T) => void
 }) {
     return (
-        <div style={{ display: 'flex', border: '1px solid #e6e0d5', borderRadius: 6, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', border: '1px solid #CCCCCC', borderRadius: 6, overflow: 'hidden' }}>
             {options.map((opt) => (
                 <button
                     key={opt.value}
@@ -84,8 +77,8 @@ function ToggleGroup<T extends string>({
                         fontFamily: TOGGLE_MONO,
                         border: 'none',
                         cursor: 'pointer',
-                        background: value === opt.value ? '#3a7d5d' : 'transparent',
-                        color: value === opt.value ? '#fbf9f4' : '#9a948a',
+                        background: value === opt.value ? '#0067FF' : 'transparent',
+                        color: value === opt.value ? '#FFFFFF' : '#333333',
                     }}>
                     {opt.label}
                 </button>
@@ -101,59 +94,6 @@ const GRANULARITY_OPTIONS: { value: Granularity; label: string }[] = [
     { value: 'weekly', label: 'Weekly' },
     { value: 'biweekly', label: 'Bi-Weekly' },
 ]
-
-const STATUS_FOOTER_BTN: React.CSSProperties = {
-    flex: 1,
-    padding: '5px 8px',
-    borderRadius: 6,
-    border: '1px solid #e0dad0',
-    background: 'transparent',
-    color: '#6b655c',
-    fontFamily: MONO,
-    fontSize: 10.5,
-    cursor: 'pointer',
-}
-
-/** The "Statuses" checklist for `allowStatusFilter` — built from the same Dropdown/Row pair
- *  the Time/Cluster/Source filters use (components/shared/FilterControls.tsx), so it looks and
- *  behaves like every other filter in the app. `keys` is always the FULL series list (so an
- *  already-hidden status stays listed to be re-checked), `hidden` only which are unchecked. The
- *  footer's Select all/Deselect all replace `hidden` outright rather than looping `onToggle` —
- *  one state update instead of `keys.length` of them. */
-function StatusFilterDropdown({
-    keys,
-    hidden,
-    onToggle,
-    onSetHidden,
-}: {
-    keys: string[]
-    hidden: Set<string>
-    onToggle: (key: string) => void
-    onSetHidden: (next: Set<string>) => void
-}) {
-    const shown = keys.length - hidden.size
-    return (
-        <Dropdown
-            label="Statuses"
-            summary={hidden.size === 0 ? 'All' : `${shown}/${keys.length}`}
-            active={hidden.size > 0}
-            width={220}
-            footer={
-                <div style={{ display: 'flex', gap: 6 }}>
-                    <button style={STATUS_FOOTER_BTN} onClick={() => onSetHidden(new Set())}>
-                        Select all
-                    </button>
-                    <button style={STATUS_FOOTER_BTN} onClick={() => onSetHidden(new Set(keys))}>
-                        Deselect all
-                    </button>
-                </div>
-            }>
-            {keys.map((k) => (
-                <Row key={k} label={k} checked={!hidden.has(k)} onToggle={() => onToggle(k)} />
-            ))}
-        </Dropdown>
-    )
-}
 
 /** The slice of recharts' Tooltip content props this component actually reads — avoids
  *  pulling in recharts' full generic TooltipProps type for one narrow use. */
@@ -206,7 +146,7 @@ function PartialHatchDefs({ colors }: { colors: string[] }) {
                         patternTransform="rotate(45)"
                         patternUnits="userSpaceOnUse">
                         <rect width={6} height={6} fill={c} />
-                        <line x1={0} y1={0} x2={0} y2={6} stroke="#fbf9f4" strokeWidth={2.4} strokeOpacity={0.9} />
+                        <line x1={0} y1={0} x2={0} y2={6} stroke="#FFFFFF" strokeWidth={2.4} strokeOpacity={0.9} />
                     </pattern>
                 ))}
             </defs>
@@ -243,7 +183,7 @@ function makeTotalLabel(totals: number[]) {
                 textAnchor="middle"
                 fontSize={10}
                 fontWeight={700}
-                fill="#3a3630"
+                fill="#000000"
                 fontFamily="'IBM Plex Mono', monospace">
                 {total.toLocaleString('en-IN')}
             </text>
@@ -271,7 +211,7 @@ function SegmentPercentLabel(props: { x?: number; y?: number; width?: number; he
             textAnchor="middle"
             fontSize={9.5}
             fontWeight={700}
-            fill="#fbf9f4"
+            fill="#FFFFFF"
             fontFamily="'IBM Plex Mono', monospace">
             {Math.round(share)}%
         </text>
@@ -293,7 +233,11 @@ function makeBarLabel(percent: boolean, isTopSeries: boolean, totals: number[], 
     )
 }
 
-const MONTHS =['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+function totalOf(p: WeekSeriesPoint): number {
+    return Object.values(p.counts).reduce((s: number, n) => s + (n ?? 0), 0)
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /** The Sunday-end date of a Monday-start week, from its ISO calendar-date key (e.g.
  *  '2026-07-06') — pure calendar arithmetic, no timezone conversion needed since the key is
@@ -363,7 +307,7 @@ function makeGroupTick(rows: Array<{ top: string; bottom: string }>) {
         const row = rows[index]
         if (!row) return <></>
         return (
-            <text x={x} y={y + 9} textAnchor="middle" fontSize={9} fill="#9a948a" fontFamily="'IBM Plex Mono', monospace">
+            <text x={x} y={y + 9} textAnchor="middle" fontSize={9} fill="#333333" fontFamily="'IBM Plex Mono', monospace">
                 <tspan x={x} dy={0}>
                     {row.top}
                 </tspan>
@@ -397,14 +341,14 @@ function ShareTooltip({ payload }: Pick<RechartsTooltipProps, 'payload'>) {
         const rawKey = m ? `w${groupKey}_raw_${seriesName}` : `raw_${seriesName}`
         const rawValue = typeof row[rawKey] === 'number' ? (row[rawKey] as number) : (entry.value ?? 0)
         const g = groups.get(groupKey) ?? { label: label ?? '', items: [] }
-        g.items.push({ name: seriesName, value: rawValue, color: entry.color ?? '#3a3630' })
+        g.items.push({ name: seriesName, value: rawValue, color: entry.color ?? '#000000' })
         groups.set(groupKey, g)
     }
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 8,
                 fontSize: 12,
                 fontFamily: "'IBM Plex Mono', monospace",
@@ -419,7 +363,7 @@ function ShareTooltip({ payload }: Pick<RechartsTooltipProps, 'payload'>) {
                     const total = g.items.reduce((s, it) => s + it.value, 0)
                     return (
                         <div key={groupKey}>
-                            {g.label && <div style={{ fontWeight: 700, marginBottom: 2, color: '#3a3630' }}>{g.label}</div>}
+                            {g.label && <div style={{ fontWeight: 700, marginBottom: 2, color: '#000000' }}>{g.label}</div>}
                             {g.items.map((it) => (
                                 <div key={it.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 14, color: it.color }}>
                                     <span>{it.name}</span>
@@ -439,9 +383,9 @@ function ShareTooltip({ payload }: Pick<RechartsTooltipProps, 'payload'>) {
  *  week to compare, or previous week was also 0). Colour carries the direction. */
 function DeltaSpan({ curr, prev }: { curr: number; prev: number | undefined }) {
     if (prev === undefined) return null
-    if (prev === 0) return curr > 0 ? <span style={{ color: '#9a948a' }}> (new)</span> : null
+    if (prev === 0) return curr > 0 ? <span style={{ color: '#333333' }}> (new)</span> : null
     const pct = ((curr - prev) / prev) * 100
-    const color = pct > 0 ? '#3a7d5d' : pct < 0 ? '#c7533e' : '#9a948a'
+    const color = pct > 0 ? '#16A34A' : pct < 0 ? '#DC2626' : '#333333'
     const sign = pct > 0 ? '+' : ''
     return (
         <span style={{ color }}>
@@ -483,14 +427,14 @@ function ClusterDeltaTooltip({
         const rawKey = m ? `w${groupKey}_raw_${seriesName}` : `raw_${seriesName}`
         const rawValue = typeof row[rawKey] === 'number' ? (row[rawKey] as number) : (entry.value ?? 0)
         const g = groups.get(groupKey) ?? { label: label ?? '', weekStart, items: [] }
-        g.items.push({ name: seriesName, raw: rawValue, color: entry.color ?? '#3a3630' })
+        g.items.push({ name: seriesName, raw: rawValue, color: entry.color ?? '#000000' })
         groups.set(groupKey, g)
     }
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 8,
                 fontSize: 12,
                 fontFamily: "'IBM Plex Mono', monospace",
@@ -513,7 +457,7 @@ function ClusterDeltaTooltip({
                     }
                     return (
                         <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {g.label && <div style={{ fontWeight: 700, color: '#3a3630' }}>{g.label}</div>}
+                            {g.label && <div style={{ fontWeight: 700, color: '#000000' }}>{g.label}</div>}
                             {[...byCluster.entries()].map(([cluster, items]) => {
                                 const clusterTotal = items.reduce((s, it) => s + it.raw, 0)
                                 const prevClusterTotal = prevPoint
@@ -527,7 +471,7 @@ function ClusterDeltaTooltip({
                                                 justifyContent: 'space-between',
                                                 gap: 14,
                                                 fontWeight: 700,
-                                                color: '#3a3630',
+                                                color: '#000000',
                                             }}>
                                             <span>{cluster}</span>
                                             <span>
@@ -575,12 +519,10 @@ export default function WoWStackedBar({
     showSharePercent = false,
     allowPercentToggle = false,
     allowBiWeeklyToggle = false,
-    allowStatusFilter = false,
     clusterOf,
 }: Props) {
     const [mode, setMode] = useState<StackMode>('count')
     const [granularity, setGranularity] = useState<Granularity>('weekly')
-    const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set())
     const percent = allowPercentToggle && mode === 'percent'
     const biWeekly = allowBiWeeklyToggle && granularity === 'biweekly'
     // Merging happens BEFORE anything below reads `data` — every downstream computation (series
@@ -594,20 +536,6 @@ export default function WoWStackedBar({
         return i === -1 ? Number.MAX_SAFE_INTEGER : i
     }
     const seriesKeys = present.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
-    // Everything below plots/sums activeKeys, never the full seriesKeys — when nothing is
-    // hidden (hiddenKeys stays empty unless allowStatusFilter's picker is used) the two are
-    // identical, so every other caller of this component is unaffected.
-    const activeKeys = seriesKeys.filter((k) => !hiddenKeys.has(k))
-    function totalOfVisible(p: WeekSeriesPoint): number {
-        return activeKeys.reduce((s, k) => s + (p.counts[k] ?? 0), 0)
-    }
-    const toggleHidden = (key: string) =>
-        setHiddenKeys((prev) => {
-            const next = new Set(prev)
-            if (next.has(key)) next.delete(key)
-            else next.add(key)
-            return next
-        })
     const weekIndexByStart = new Map(data.map((p, i) => [p.weekStart, i]))
     const tooltipContent = clusterOf
         ? ({ active, payload }: RechartsTooltipProps) =>
@@ -618,22 +546,14 @@ export default function WoWStackedBar({
           ? ({ active, payload }: RechartsTooltipProps) => (active ? <ShareTooltip payload={payload} /> : null)
           : undefined
 
-    const axisTick = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9a948a' }
+    const axisTick = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#333333' }
     // One hatch pattern per colour actually in use on this chart, not the whole palette.
-    const hatchColors = [...new Set(activeKeys.map((k) => colorFor(k)))]
-    const statusFilter = allowStatusFilter ? (
-        <StatusFilterDropdown keys={seriesKeys} hidden={hiddenKeys} onToggle={toggleHidden} onSetHidden={setHiddenKeys} />
-    ) : null
+    const hatchColors = [...new Set(seriesKeys.map((k) => colorFor(k)))]
     const toggleRow =
-        statusFilter || allowPercentToggle || allowBiWeeklyToggle ? (
-            <div style={{ display: 'flex', justifyContent: statusFilter ? 'space-between' : 'flex-end', gap: 8, marginBottom: 6 }}>
-                {statusFilter}
-                {(allowBiWeeklyToggle || allowPercentToggle) && (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        {allowBiWeeklyToggle && <ToggleGroup options={GRANULARITY_OPTIONS} value={granularity} onChange={setGranularity} />}
-                        {allowPercentToggle && <ToggleGroup options={STACK_MODE_OPTIONS} value={mode} onChange={setMode} />}
-                    </div>
-                )}
+        allowPercentToggle || allowBiWeeklyToggle ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 6 }}>
+                {allowBiWeeklyToggle && <ToggleGroup options={GRANULARITY_OPTIONS} value={granularity} onChange={setGranularity} />}
+                {allowPercentToggle && <ToggleGroup options={STACK_MODE_OPTIONS} value={mode} onChange={setMode} />}
             </div>
         ) : null
     // Percent view re-scales every series to its own week's share; the raw count still rides
@@ -646,18 +566,11 @@ export default function WoWStackedBar({
         ? { domain: [0, 100] as [number, number], tickFormatter: (v: number) => `${Math.round(v)}%` }
         : { allowDecimals: false }
 
-    // The axis gutter has to fit the widest tick it will actually draw. At a fixed 32px a
-    // five-digit tick loses its leading digit — 12000 renders as "2000", which does not look
-    // broken, it looks like a smaller number. Derived from the tallest bar so charts with small
-    // counts keep the tight gutter they have always had.
-    const tallestBar = Math.max(0, ...data.map(totalOfVisible))
-    const yAxisWidth = percent ? 32 : Math.max(32, 10 + String(Math.round(tallestBar)).length * 7)
-
     // Bi-weekly always renders one bar per (already-merged) point via this branch, regardless of
     // `pairWeeks` — see allowBiWeeklyToggle's doc comment for why the two don't compose.
     if (!pairWeeks || biWeekly) {
         const chartData = data.map((p) => {
-            const total = totalOfVisible(p)
+            const total = totalOf(p)
             const row: Record<string, unknown> = {
                 weekLabel: p.weekLabel,
                 weekStart: p.weekStart,
@@ -673,7 +586,7 @@ export default function WoWStackedBar({
             }
             return row
         })
-        const totals = data.map(totalOfVisible)
+        const totals = data.map(totalOf)
         return (
             <div style={CHART_WRAP}>
                 {toggleRow}
@@ -681,14 +594,14 @@ export default function WoWStackedBar({
                 <div style={CHART_AREA}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 18, right: 4, bottom: 4, left: 0 }} barSize={22}>
-                    <CartesianGrid vertical={false} stroke="#efe9e0" strokeDasharray="0" />
+                    <CartesianGrid vertical={false} stroke="#F5F5F5" strokeDasharray="0" />
                     <XAxis dataKey="range" tick={axisTick} axisLine={false} tickLine={false} />
-                    <YAxis width={yAxisWidth} tick={axisTick} axisLine={false} tickLine={false} {...yAxisProps} />
+                    <YAxis width={32} tick={axisTick} axisLine={false} tickLine={false} {...yAxisProps} />
                     <Tooltip
                         content={tooltipContent}
                         contentStyle={{
-                            background: '#fbf9f4',
-                            border: '1px solid #e9e4db',
+                            background: '#FFFFFF',
+                            border: '1px solid #CCCCCC',
                             borderRadius: 8,
                             fontSize: 12,
                             fontFamily: "'IBM Plex Mono', monospace",
@@ -696,7 +609,7 @@ export default function WoWStackedBar({
                         cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                     />
                     <Legend wrapperStyle={LEGEND_STYLE} formatter={legendFormatter} />
-                    {activeKeys.map((key, i) => (
+                    {seriesKeys.map((key, i) => (
                         <Bar
                             key={key}
                             dataKey={key}
@@ -704,7 +617,7 @@ export default function WoWStackedBar({
                             fill={colorFor(key)}
                             name={key}
                             cursor="pointer"
-                            label={makeBarLabel(percent, i === activeKeys.length - 1, totals, (ri) => chartData[ri]?.[key] as number | undefined)}
+                            label={makeBarLabel(percent, i === seriesKeys.length - 1, totals, (ri) => chartData[ri]?.[key] as number | undefined)}
                             onClick={(_, index) => {
                                 const point = data[index as number]
                                 if (point) onSegmentClick(point, key)
@@ -738,7 +651,7 @@ export default function WoWStackedBar({
             row[`w${wi}_label`] = weekRangeLabel(p)
             row[`w${wi}_incomplete`] = p.incomplete === true
             row[`w${wi}_weekStart`] = p.weekStart
-            const total = totalOfVisible(p)
+            const total = totalOf(p)
             for (const k of seriesKeys) {
                 const raw = p.counts[k] ?? 0
                 row[`w${wi}_${k}`] = seriesValue(raw, total)
@@ -749,8 +662,8 @@ export default function WoWStackedBar({
     })
 
     const groupTotals: Record<number, number[]> = {
-        0: groups.map((pair) => (pair[0] ? totalOfVisible(pair[0]!) : 0)),
-        1: groups.map((pair) => (pair[1] ? totalOfVisible(pair[1]!) : 0)),
+        0: groups.map((pair) => (pair[0] ? totalOf(pair[0]!) : 0)),
+        1: groups.map((pair) => (pair[1] ? totalOf(pair[1]!) : 0)),
     }
     const groupTickRows = groups.map((pair) => ({
         top: weekRangeLabel(pair[0]!),
@@ -764,7 +677,7 @@ export default function WoWStackedBar({
             <div style={CHART_AREA}>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 18, right: 4, bottom: 4, left: 0 }} barSize={16} barGap={2} barCategoryGap="30%">
-                <CartesianGrid vertical={false} stroke="#efe9e0" strokeDasharray="0" />
+                <CartesianGrid vertical={false} stroke="#F5F5F5" strokeDasharray="0" />
                 <XAxis
                     dataKey="groupLabel"
                     tick={makeGroupTick(groupTickRows)}
@@ -773,12 +686,12 @@ export default function WoWStackedBar({
                     axisLine={false}
                     tickLine={false}
                 />
-                <YAxis width={yAxisWidth} tick={axisTick} axisLine={false} tickLine={false} {...yAxisProps} />
+                <YAxis width={32} tick={axisTick} axisLine={false} tickLine={false} {...yAxisProps} />
                 <Tooltip
                     content={tooltipContent}
                     contentStyle={{
-                        background: '#fbf9f4',
-                        border: '1px solid #e9e4db',
+                        background: '#FFFFFF',
+                        border: '1px solid #CCCCCC',
                         borderRadius: 8,
                         fontSize: 12,
                         fontFamily: "'IBM Plex Mono', monospace",
@@ -787,7 +700,7 @@ export default function WoWStackedBar({
                 />
                 <Legend wrapperStyle={LEGEND_STYLE} formatter={legendFormatter} />
                 {[0, 1].flatMap((wi) =>
-                    activeKeys.map((key, i) => (
+                    seriesKeys.map((key, i) => (
                         <Bar
                             key={`w${wi}_${key}`}
                             dataKey={`w${wi}_${key}`}
@@ -798,7 +711,7 @@ export default function WoWStackedBar({
                             cursor="pointer"
                             label={makeBarLabel(
                                 percent,
-                                i === activeKeys.length - 1,
+                                i === seriesKeys.length - 1,
                                 groupTotals[wi]!,
                                 (ri) => chartData[ri]?.[`w${wi}_${key}`] as number | undefined
                             )}

@@ -1,7 +1,9 @@
-import { computeSpendForWindow } from './costs'
+import { computeSpendByWeek, computeSpendForWindow } from './costs'
 import type { BidSourceFact, BuyerFacts, LeadFact } from './facts'
 import { type BuyerFilters, leadMatches, soldBidMatches, visitMatches } from './filters'
 import {
+    ATTRIBUTION_NOT_APPLICABLE,
+    ATTRIBUTION_UNMAPPED_PROPERTY,
     IST_OFFSET_MS,
     VALID_MICROMARKETS,
     buildBuckets,
@@ -11,7 +13,9 @@ import {
 } from './shared'
 import { funnelTargetsFor } from './targets'
 import {
+    type AttributionExtra,
     type BuyerReportData,
+    type CostWeekPoint,
     type FrtWeekPoint,
     type HouseWarmPoint,
     type LeadListItem,
@@ -20,6 +24,7 @@ import {
     type ReasonPoint,
     type TwoWeekRow,
     type WeekSeriesPoint,
+    QUALIFIED_STATUSES,
     QUARTER_LABEL,
     TOTAL_VISITS_RAW_TARGET_MULTIPLIER,
 } from './types'
@@ -54,6 +59,60 @@ function emptySeries(
 function bump(point: WeekSeriesPoint, key: string, id: string) {
     point.counts[key] = (point.counts[key] ?? 0) + 1
     ;(point.leadIds[key] ??= []).push(id)
+}
+
+
+// Campaign/Ad Set/Ad/Property names are far higher-cardinality than Source/Cluster/
+// Micromarket — a single quarter's live data has been observed with 100+ distinct
+// campaign names alone (each dated/targeted individually), unlike the small, bounded enum
+// every other WoW-by-X chart stacks on. Rendering every one of them as its own stacked-bar
+// series made the page unresponsive in manual testing (2026-09-23) — hundreds of series
+// across several weeks is thousands of SVG elements per chart. Cap each of those four
+// dimensions to its top MAX_ATTRIBUTION_SERIES values by total volume, folding the long
+// tail into one "Other ..." bucket — same "never let it vanish" principle as the rest of
+// this file, just bounded so the chart (and the browser rendering it) stays usable. Not
+// applied to Micromarket, whose cardinality is already small and bounded
+// (VALID_MICROMARKETS).
+const MAX_ATTRIBUTION_SERIES = 15
+
+function topSeriesKeys(points: WeekSeriesPoint[], keepAlways: Set<string>, max: number): Set<string> {
+    const totals = new Map<string, number>()
+    for (const p of points) for (const [k, n] of Object.entries(p.counts)) totals.set(k, (totals.get(k) ?? 0) + (n ?? 0))
+    const ranked = [...totals.keys()]
+        .filter((k) => !keepAlways.has(k))
+        .sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0))
+    return new Set([...keepAlways, ...ranked.slice(0, max)])
+}
+
+function foldIntoOther(points: WeekSeriesPoint[], keep: Set<string>, otherLabel: string): WeekSeriesPoint[] {
+    const allKeys = new Set(points.flatMap((p) => Object.keys(p.counts)))
+    if ([...allKeys].every((k) => keep.has(k))) return points // nothing over the cap
+    return points.map((p) => {
+        const counts: Partial<Record<string, number>> = {}
+        const leadIds: Partial<Record<string, string[]>> = {}
+        for (const [k, n] of Object.entries(p.counts)) {
+            const bucket = keep.has(k) ? k : otherLabel
+            counts[bucket] = (counts[bucket] ?? 0) + (n ?? 0)
+        }
+        for (const [k, ids] of Object.entries(p.leadIds)) {
+            const bucket = keep.has(k) ? k : otherLabel
+            ;(leadIds[bucket] ??= []).push(...(ids ?? []))
+        }
+        return { ...p, counts, leadIds }
+    })
+}
+
+// Caps a Leads-by-X / Qualified-by-X pair to the SAME top-N keys (ranked by the Leads
+// series' own volume) so the two charts stay directly comparable — a campaign folded into
+// "Other" on one is folded into "Other" on the other, never split differently.
+function capAttributionPair(
+    leadsSeries: WeekSeriesPoint[],
+    qualifiedSeries: WeekSeriesPoint[],
+    keepAlways: Set<string>,
+    otherLabel: string
+): [WeekSeriesPoint[], WeekSeriesPoint[]] {
+    const keep = topSeriesKeys(leadsSeries, keepAlways, MAX_ATTRIBUTION_SERIES)
+    return [foldIntoOther(leadsSeries, keep, otherLabel), foldIntoOther(qualifiedSeries, keep, otherLabel)]
 }
 
 function ratio(n: number, d: number): number | null {
@@ -169,6 +228,10 @@ interface FunnelActuals {
      *  a lead that re-enquires produces a second touch here but is still one row in
      *  `leads`. No established target exists for it. */
     totalLeadsRaw: number
+    /** Same touch table as totalLeadsRaw, restricted to touches whose Lead_Status AT THAT
+     *  TOUCH is in QUALIFIED_STATUSES — backs the small "Qualified (LSH)" box beside the
+     *  funnel's "Total Leads" tile. Not deduped by lead, same as totalLeadsRaw. */
+    qualifiedLeadsRaw: number
     qualifiedLeads: number
     newVisits: number
     oldVisits: number
@@ -215,11 +278,13 @@ function computeFunnelActuals(
     const qualifiedLeads = windowLeads.filter((l) => l.isQualified).length
 
     let totalLeadsRaw = 0
+    let qualifiedLeadsRaw = 0
     for (const t of facts.lshTouches) {
         if (!inWindow(t.timestamp)) continue
         const lead = leadById.get(t.leadId)
         if (!lead || !leadMatches(lead, filters)) continue
         totalLeadsRaw++
+        if ((QUALIFIED_STATUSES as readonly string[]).includes(t.leadStatus)) qualifiedLeadsRaw++
     }
 
     // Unique visits are per PERSON, so the map is keyed on the lead's dedupKey (phone) —
@@ -282,6 +347,7 @@ function computeFunnelActuals(
     return {
         totalLeads: windowLeads.length,
         totalLeadsRaw,
+        qualifiedLeadsRaw,
         qualifiedLeads,
         newVisits,
         oldVisits,
@@ -370,6 +436,85 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
         ...summarizeFrt(frtMinutesByBucket[i]!),
     }))
 
+    // === NEW 2026-09-23: Leads/Qualified Leads by Campaign, Ad Set, Ad, Property,
+    // Micromarket. A second, separate pass over facts.leads — deliberately NOT merged into
+    // the loop above. That loop computes the twelve cards derive.golden.test.ts locks
+    // byte-for-byte, and its fixture explicitly documents that those twelve must never read
+    // LeadFact's attributed* fields (a second, parallel attribution used elsewhere only by
+    // the cost block) because they're reconciled against Metabase on Truva_Micromarket/
+    // Lead_Source and switching sources would break that silently. This block reads
+    // attributedCampaign/attributedAdSet/attributedAd/attributedProperty for five BRAND NEW
+    // cards instead — keeping it a separate loop keeps that boundary visible in the diff,
+    // not just in a comment. Same population/eligibility gate as the original loop, so
+    // "Leads"/"Qualified Leads" mean exactly what they mean everywhere else on this tab.
+    // Micromarket here is the lead's own micromarketPrimary (same field/convention
+    // qualifiedByCluster already uses for clusters) — independently available and already
+    // verified for every lead, not LSH attribution, which only covers the first touch.
+    const leadsByCampaign = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const qualifiedByCampaign = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const leadsByAdSet = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const qualifiedByAdSet = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const leadsByAd = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const qualifiedByAd = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const leadsByProperty = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const qualifiedByProperty = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const leadsByMicromarket = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const qualifiedByMicromarket = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+
+    for (const lead of facts.leads) {
+        if (!lead.isPrimary || !lead.inPopulation || !leadMatches(lead, filters)) continue
+        const idx = bucketOf(lead.createdAt)
+        if (idx === undefined) continue
+
+        const campaign = lead.attributedCampaign || ATTRIBUTION_NOT_APPLICABLE
+        const adSet = lead.attributedAdSet || ATTRIBUTION_NOT_APPLICABLE
+        const ad = lead.attributedAd || ATTRIBUTION_NOT_APPLICABLE
+        const property = lead.attributedProperty || ATTRIBUTION_UNMAPPED_PROPERTY
+        const micromarket = lead.micromarketPrimary || 'Unknown'
+
+        bump(leadsByCampaign[idx]!, campaign, lead.id)
+        bump(leadsByAdSet[idx]!, adSet, lead.id)
+        bump(leadsByAd[idx]!, ad, lead.id)
+        bump(leadsByProperty[idx]!, property, lead.id)
+        bump(leadsByMicromarket[idx]!, micromarket, lead.id)
+
+        if (lead.isQualified) {
+            bump(qualifiedByCampaign[idx]!, campaign, lead.id)
+            bump(qualifiedByAdSet[idx]!, adSet, lead.id)
+            bump(qualifiedByAd[idx]!, ad, lead.id)
+            bump(qualifiedByProperty[idx]!, property, lead.id)
+            bump(qualifiedByMicromarket[idx]!, micromarket, lead.id)
+        }
+    }
+
+    // Cap the four high-cardinality dimensions to their top MAX_ATTRIBUTION_SERIES values
+    // (see capAttributionPair's own comment) — Micromarket is left uncapped, its cardinality
+    // already bounded by VALID_MICROMARKETS.
+    const [leadsByCampaignCapped, qualifiedByCampaignCapped] = capAttributionPair(
+        leadsByCampaign,
+        qualifiedByCampaign,
+        new Set([ATTRIBUTION_NOT_APPLICABLE]),
+        'Other Campaigns'
+    )
+    const [leadsByAdSetCapped, qualifiedByAdSetCapped] = capAttributionPair(
+        leadsByAdSet,
+        qualifiedByAdSet,
+        new Set([ATTRIBUTION_NOT_APPLICABLE]),
+        'Other Ad Sets'
+    )
+    const [leadsByAdCapped, qualifiedByAdCapped] = capAttributionPair(
+        leadsByAd,
+        qualifiedByAd,
+        new Set([ATTRIBUTION_NOT_APPLICABLE]),
+        'Other Ads'
+    )
+    const [leadsByPropertyCapped, qualifiedByPropertyCapped] = capAttributionPair(
+        leadsByProperty,
+        qualifiedByProperty,
+        new Set([ATTRIBUTION_UNMAPPED_PROPERTY]),
+        'Other Properties'
+    )
+
     // === 5: Visit pipeline — a live snapshot of current statuses. Deliberately outside
     // the time filter: "what is queued right now" has no time dimension to slice.
     const mmMap = new Map<string, MicromarketPoint>()
@@ -414,6 +559,57 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
     const seenLeadBucketMicromarket = new Set<string>()
     const leadById = new Map(facts.leads.map((l) => [l.id, l]))
 
+    // === Added 2026-09-23: "Non-Unique Count" + "Lead Status" extra info for the Campaign/
+    // AdSet/Ad/Property/Micromarket cuts above. EXTRA CONTEXT, not part of the funnel —
+    // counts every Lead_Source_History touch (any Serial_Number) in the SAME window the
+    // WoW charts on this tab are currently showing (rangeStart/rangeEnd, i.e. whatever the
+    // time filter picks), so it does NOT dedupe by lead the way every other number on this
+    // tab does — a lead who re-enquired 3 times counts 3 times. See AttributionExtra's own
+    // doc comment and metric-definitions.md.
+    function bumpExtra(map: Record<string, AttributionExtra>, key: string, status: string) {
+        const entry = (map[key] ??= { nonUniqueCount: 0, statusBreakdown: {} })
+        entry.nonUniqueCount += 1
+        entry.statusBreakdown[status] = (entry.statusBreakdown[status] ?? 0) + 1
+    }
+    const lshExtraByDimension: BuyerReportData['lshExtraByDimension'] = {
+        campaign: {},
+        adSet: {},
+        ad: {},
+        property: {},
+        micromarket: {},
+    }
+    for (const t of facts.lshTouches) {
+        const ts = new Date(t.timestamp)
+        if (Number.isNaN(ts.getTime()) || ts < rangeStart || ts >= rangeEnd) continue
+        const lead = leadById.get(t.leadId)
+        if (!lead || !leadMatches(lead, filters)) continue
+        const status = t.leadStatus || 'Unknown'
+        bumpExtra(lshExtraByDimension.campaign, t.campaign || ATTRIBUTION_NOT_APPLICABLE, status)
+        bumpExtra(lshExtraByDimension.adSet, t.adSet || ATTRIBUTION_NOT_APPLICABLE, status)
+        bumpExtra(lshExtraByDimension.ad, t.ad || ATTRIBUTION_NOT_APPLICABLE, status)
+        bumpExtra(lshExtraByDimension.property, t.property || ATTRIBUTION_UNMAPPED_PROPERTY, status)
+        bumpExtra(lshExtraByDimension.micromarket, t.micromarket || 'Unknown', status)
+    }
+
+    // === Added 2026-09-26: "WoW Leads (LSH)" / "WoW Qualified Leads (LSH)" — same touch
+    // table and same "status at time of touch" reading as totalLeadsRaw/qualifiedLeadsRaw
+    // (computeFunnelActuals, above) and the lshExtraByDimension block just above, bucketed by
+    // week instead of summed once. Single series each — no dimension split.
+    const LSH_COUNT_KEY = 'Leads (LSH)'
+    const LSH_QUALIFIED_KEY = 'Qualified (LSH)'
+    const lshCountByWeek = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const lshQualifiedByWeek = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    for (const t of facts.lshTouches) {
+        const lead = leadById.get(t.leadId)
+        if (!lead || !leadMatches(lead, filters)) continue
+        const idx = bucketOf(t.timestamp)
+        if (idx === undefined) continue
+        bump(lshCountByWeek[idx]!, LSH_COUNT_KEY, t.leadId)
+        if ((QUALIFIED_STATUSES as readonly string[]).includes(t.leadStatus)) {
+            bump(lshQualifiedByWeek[idx]!, LSH_QUALIFIED_KEY, t.leadId)
+        }
+    }
+
     for (const v of facts.visits) {
         const lead = leadById.get(v.leadId)
         if (!visitMatches(v, lead, filters)) continue
@@ -444,6 +640,59 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
             bump(uniqueGrossVisitsBySource[idx]!, v.sourceLabel, v.leadId)
         }
     }
+
+    // === Added 2026-09-26: "(Visit based on created time)" variants — the exact same
+    // dedup/filter rules as uniqueVisitsBySource/uniqueGrossVisitsBySource just above
+    // (visitMatches, dedupKey-based person identity, person-vs-person+property grain), the
+    // only change being the bucket index comes from the LEAD's created week
+    // (v.leadCreatedAt) instead of the visit's own week (v.startAt). Separate Set instances
+    // so this pass's dedup never shares state with the visit-week pass above.
+    const uniqueVisitsByLeadCreatedWeek = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const uniqueGrossVisitsByLeadCreatedWeek = emptySeries(bucketStarts, labelOf, bucketIncomplete, bucketPartialStart)
+    const seenLeadCreatedBucket = new Set<string>()
+    const seenLeadPropertyCreatedBucket = new Set<string>()
+    for (const v of facts.visits) {
+        const lead = leadById.get(v.leadId)
+        if (!visitMatches(v, lead, filters)) continue
+        const idx = bucketOf(v.leadCreatedAt)
+        if (idx === undefined) continue
+
+        const person = lead?.dedupKey ?? `id:${v.leadId}`
+
+        const key = `${idx}|${person}`
+        if (!seenLeadCreatedBucket.has(key)) {
+            seenLeadCreatedBucket.add(key)
+            bump(uniqueVisitsByLeadCreatedWeek[idx]!, v.sourceLabel, v.leadId)
+        }
+
+        const propertyKey = `${idx}|${person}|${v.propertyId}`
+        if (!seenLeadPropertyCreatedBucket.has(propertyKey)) {
+            seenLeadPropertyCreatedBucket.add(propertyKey)
+            bump(uniqueGrossVisitsByLeadCreatedWeek[idx]!, v.sourceLabel, v.leadId)
+        }
+    }
+
+    // === Added 2026-09-26: WoW CPL/CPQL/CPV — weekly Spend divided by that week's Lead
+    // Count / Qualified Lead Count / Unique Visits (by lead created week). Null whenever
+    // that week's denominator is 0, same null-safe convention as every other cost-per-X
+    // figure on this tab (a 0 denominator would read as "free", not "no data"). A local
+    // divide rather than reusing the Last-2-Week table's own `divRaw` below, since that
+    // const isn't declared yet at this point in the function.
+    function sumCounts(p: WeekSeriesPoint): number {
+        return Object.values(p.counts).reduce((s: number, n) => s + (n ?? 0), 0)
+    }
+    const divWeek = (n: number, d: number): number | null => (n > 0 && d > 0 ? n / d : null)
+    const weeklySpend = computeSpendByWeek(facts, filters, bucketStarts, bucketOf)
+    function costWeekSeries(denominatorOf: (i: number) => number): CostWeekPoint[] {
+        return bucketStarts.map((s, i) => ({
+            weekStart: dateKey(s),
+            weekLabel: labelOf(s),
+            value: divWeek(weeklySpend[i]!, denominatorOf(i)),
+        }))
+    }
+    const cplByWeek = costWeekSeries((i) => sumCounts(leadsBySource[i]!))
+    const cpqlByWeek = costWeekSeries((i) => sumCounts(qualifiedBySource[i]!))
+    const cpvByWeek = costWeekSeries((i) => sumCounts(uniqueVisitsByLeadCreatedWeek[i]!))
 
     // Visits split by the BID's own source, Channel Partner included. Reads facts.visitSplit,
     // not facts.visits — the latter is Direct-only by construction (see VisitSplitFact's own
@@ -733,6 +982,9 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
                 actual: newConversions + oldConversions,
             },
         ],
+        // EXTRA CONTEXT for the "Total Leads" tile above, not a funnel stage — see
+        // OverallFunnelData.lshQualifiedLeads's own doc comment.
+        lshQualifiedLeads: quarterActuals.qualifiedLeadsRaw,
         arrows: [
             {
                 label: 'Duplicate Ratio',
@@ -797,6 +1049,24 @@ export function deriveReport(facts: BuyerFacts, opts: DeriveOptions): Omit<Buyer
         totalVisitsByMicromarket,
         qualifiedByCluster,
         visitedByEverWarm,
+        leadsByCampaign: leadsByCampaignCapped,
+        qualifiedByCampaign: qualifiedByCampaignCapped,
+        leadsByAdSet: leadsByAdSetCapped,
+        qualifiedByAdSet: qualifiedByAdSetCapped,
+        leadsByAd: leadsByAdCapped,
+        qualifiedByAd: qualifiedByAdCapped,
+        leadsByProperty: leadsByPropertyCapped,
+        qualifiedByProperty: qualifiedByPropertyCapped,
+        leadsByMicromarket,
+        qualifiedByMicromarket,
+        lshExtraByDimension,
+        lshCountByWeek,
+        lshQualifiedByWeek,
+        uniqueVisitsByLeadCreatedWeek,
+        uniqueGrossVisitsByLeadCreatedWeek,
+        cplByWeek,
+        cpqlByWeek,
+        cpvByWeek,
         leadsById: leadListItems,
         spendIngest: facts.spendIngest,
     }

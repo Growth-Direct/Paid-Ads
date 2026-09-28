@@ -74,6 +74,18 @@ export const CHANNEL_MAP: Record<string, Channel> = {
 // First Response Time keeps excluding it separately (FRT_EXCLUDED_SOURCES in derive.ts).
 export const EXCLUDED_SOURCES = new Set(['channel partner', 'builder', 'nobroker', 'society partners'])
 
+// Dashboard-only narrowing, 2026-09-23 — see metric-definitions.md's fifth buyer
+// population rule. Requested explicitly by the growth team: only Paid Ads and 3P leads
+// count anywhere on this dashboard now. Everything else CHANNEL_MAP/mapChannel produces
+// still exists — the Overall Funnel's "Total Conversions" tile is deliberately exempt
+// from every population rule (this one included) and still needs to name a lead's real
+// channel, and historical/audit context still wants the full taxonomy — this only decides
+// which channels the POPULATION gate (`eligible()` in aggregate.ts) admits.
+export const RESTRICTED_CHANNELS = new Set<Channel>(['Paid Ads', '3P'])
+export function isEligibleChannel(channel: Channel | null): boolean {
+    return channel !== null && RESTRICTED_CHANNELS.has(channel)
+}
+
 // Virtual/demo micromarkets — live values are "Airport (Virtual)", "Mainland (Virtual)",
 // "Viceport (Virtual)" and "Leaf Links (Virtual)". Matched on the "(virtual)" substring
 // rather than a fixed list: the names are free-form and new ones keep appearing, while no
@@ -278,6 +290,17 @@ export function monthLabel(first: Date): string {
     const ist = new Date(first.getTime() + IST_OFFSET_MS)
     return `${MONTHS[ist.getUTCMonth()]} ${String(ist.getUTCFullYear()).slice(2)}`
 }
+
+// Placeholders for the Campaign/Ad Set/Ad/Property attribution added 2026-09-23. Shared
+// so derive.ts (chart bucketing), options.ts (dropdown option lists) and filters.ts
+// (matching) can never drift apart on the exact label used for "no value" — a dropdown
+// offering a label the chart never produces (or vice versa) would look like a bug.
+/** A touch with no ad campaign at all (Direct, Channel Partner, organic, referral, ...) —
+ *  a real, expected value verified live 2026-09-23 (~27% of first-touch rows), not a gap. */
+export const ATTRIBUTION_NOT_APPLICABLE = 'Not Applicable'
+/** A touch whose property name came back blank — more likely a real gap than an
+ *  intentional absence, so it gets its own label rather than sharing NOT_APPLICABLE. */
+export const ATTRIBUTION_UNMAPPED_PROPERTY = 'Unmapped'
 
 // Cluster to micromarket, from Knowledge/truva/truva-overview.md. Zoho models these as
 // two independent multiselect picklists with no relationship between them, so the tree

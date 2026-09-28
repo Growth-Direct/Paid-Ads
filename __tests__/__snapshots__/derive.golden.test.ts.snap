@@ -2,6 +2,117 @@
 
 exports[`deriveReport golden > produces the same full output (locks the twelve cards) 1`] = `
 {
+  "cplByWeek": [
+    {
+      "value": null,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "value": null,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "value": null,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "value": null,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "value": null,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "value": null,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "value": null,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "cpqlByWeek": [
+    {
+      "value": null,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "value": null,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "value": null,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "value": null,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "value": null,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "value": null,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "value": null,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "cpvByWeek": [
+    {
+      "value": null,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "value": null,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "value": null,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "value": null,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "value": null,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "value": null,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "value": null,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
   "everWarmByWeek": [
     {
       "counts": {},
@@ -130,6 +241,261 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
       "weekStart": "2026-08-10",
     },
   ],
+  "leadsByAd": [
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L1",
+          "L2",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L3",
+          "L4",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "leadsByAdSet": [
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L1",
+          "L2",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L3",
+          "L4",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "leadsByCampaign": [
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L1",
+          "L2",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L3",
+          "L4",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
   "leadsById": {
     "L1": {
       "createdAt": "2026-07-01T09:00:00+05:30",
@@ -188,6 +554,182 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
       "status": "Visit to be scheduled",
     },
   },
+  "leadsByMicromarket": [
+    {
+      "counts": {
+        "Powai": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "L1",
+          "L2",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Glasgow": 1,
+        "Powai": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Glasgow": [
+          "L3",
+        ],
+        "Powai": [
+          "L4",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Powai": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Glasgow": 1,
+        "Vegas": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Glasgow": [
+          "P2",
+        ],
+        "Vegas": [
+          "P1",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "leadsByProperty": [
+    {
+      "counts": {
+        "Unmapped": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "L1",
+          "L2",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Unmapped": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "L3",
+          "L4",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Unmapped": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Unmapped": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
   "leadsBySource": [
     {
       "counts": {
@@ -370,6 +912,188 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
       "weekStart": "2026-08-10",
     },
   ],
+  "lshCountByWeek": [
+    {
+      "counts": {
+        "Leads (LSH)": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Leads (LSH)": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Leads (LSH)": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Leads (LSH)": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Leads (LSH)": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Leads (LSH)": [
+          "L1",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Leads (LSH)": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Leads (LSH)": [
+          "OLD1",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "lshExtraByDimension": {
+    "ad": {
+      "Not Applicable": {
+        "nonUniqueCount": 4,
+        "statusBreakdown": {
+          "Unknown": 4,
+        },
+      },
+    },
+    "adSet": {
+      "Not Applicable": {
+        "nonUniqueCount": 4,
+        "statusBreakdown": {
+          "Unknown": 4,
+        },
+      },
+    },
+    "campaign": {
+      "Not Applicable": {
+        "nonUniqueCount": 4,
+        "statusBreakdown": {
+          "Unknown": 4,
+        },
+      },
+    },
+    "micromarket": {
+      "Unknown": {
+        "nonUniqueCount": 4,
+        "statusBreakdown": {
+          "Unknown": 4,
+        },
+      },
+    },
+    "property": {
+      "Unmapped": {
+        "nonUniqueCount": 4,
+        "statusBreakdown": {
+          "Unknown": 4,
+        },
+      },
+    },
+  },
+  "lshQualifiedByWeek": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
   "notQualifiedReasons": [
     {
       "count": 1,
@@ -449,7 +1173,257 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
         "target": 30,
       },
     ],
+    "lshQualifiedLeads": 0,
   },
+  "qualifiedByAd": [
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedByAdSet": [
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedByCampaign": [
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Not Applicable": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Not Applicable": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Not Applicable": [
+          "P1",
+          "P2",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
   "qualifiedByCluster": [
     {
       "counts": {
@@ -513,6 +1487,175 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
         ],
         "PAV": [
           "P1",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedByMicromarket": [
+    {
+      "counts": {
+        "Powai": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Glasgow": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Glasgow": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Powai": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Glasgow": 1,
+        "Vegas": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Glasgow": [
+          "P2",
+        ],
+        "Vegas": [
+          "P1",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedByProperty": [
+    {
+      "counts": {
+        "Unmapped": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Unmapped": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Unmapped": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "L5",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Unmapped": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Unmapped": [
+          "P1",
+          "P2",
         ],
       },
       "partialStart": false,
@@ -963,6 +2106,76 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
       "w2Target": null,
     },
   ],
+  "uniqueGrossVisitsByLeadCreatedWeek": [
+    {
+      "counts": {
+        "Paid Ads": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Organic": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Organic": [
+          "L3",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
   "uniqueGrossVisitsBySource": [
     {
       "counts": {},
@@ -985,6 +2198,76 @@ exports[`deriveReport golden > produces the same full output (locks the twelve c
         "Paid Ads": [
           "L1",
           "OLD1",
+        ],
+      },
+      "partialStart": false,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "partialStart": false,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "uniqueVisitsByLeadCreatedWeek": [
+    {
+      "counts": {
+        "Paid Ads": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "L1",
+        ],
+      },
+      "partialStart": true,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Organic": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Organic": [
+          "L3",
         ],
       },
       "partialStart": false,

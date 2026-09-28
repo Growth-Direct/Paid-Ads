@@ -1,5 +1,6 @@
 'use client'
 
+import { relativeTime } from '@/lib/shared/relativeTime'
 import type { SpendOrigin } from '@/lib/spend/origin'
 
 // The one-line provenance note under the Target vs Achieved table, on both tabs.
@@ -31,11 +32,11 @@ import type { SpendOrigin } from '@/lib/spend/origin'
 const wrap: React.CSSProperties = {
     marginTop: 10,
     paddingTop: 8,
-    borderTop: '1px solid #f4efe7',
+    borderTop: '1px solid #CCCCCC',
     fontFamily: "'IBM Plex Mono', monospace",
     fontSize: 10.5,
     lineHeight: 1.6,
-    color: '#9a948a',
+    color: '#333333',
 }
 
 /** The fields both tabs' ingest reports share. Narrowed so one component serves both. */
@@ -48,6 +49,9 @@ export interface SpendNoteIngest {
     unmappedSources: string[]
     unknownMicromarkets: string[]
     builtAt: string | null
+    /** Set when this window's Meta rows were overlaid with a live Graph API pull instead of
+     *  coming from `origin` — see lib/buyer/spend/meta.ts. Absent/null on every other path. */
+    metaLiveAsOf?: string | null
 }
 
 function inrShort(n: number): string {
@@ -76,7 +80,7 @@ export default function SpendNote({
 }) {
     if (ingest.status !== 'ok') {
         return (
-            <div style={{ ...wrap, color: '#c7533e' }}>
+            <div style={{ ...wrap, color: '#DC2626' }}>
                 Spend unavailable — {ingest.error ?? 'unknown error'}. Spend and cost rows show no data.
             </div>
         )
@@ -93,6 +97,14 @@ export default function SpendNote({
               ? `Spend snapshot built ${when} from the "${sheetName}" sheet.`
               : `Spend from the "${sheetName}" sheet.`
     )
+    // Meta specifically is fresher than the sentence above says — named separately rather
+    // than folded into `origin`, since every other source (3P, Offline, etc.) genuinely still
+    // comes from origin and saying otherwise would misstate where THEIR numbers come from.
+    // relativeTime, not onDate: this can be pulled many times a day, and "28 Sept" would throw
+    // away the "just now" signal that's the whole point of it being live.
+    if (ingest.metaLiveAsOf) {
+        parts.push(`Meta is live via the Graph API, pulled ${relativeTime(ingest.metaLiveAsOf)}.`)
+    }
     if (excludedUnallocated > 0) {
         parts.push(
             `${inrShort(excludedUnallocated)} carries no micromarket and is excluded by the current filter, so the cost-per rows read low.`
@@ -114,7 +126,7 @@ export default function SpendNote({
         <div style={wrap}>
             {/* The read succeeded but what it read is incomplete. Amber rather than red: the
                 numbers above are real, they are just short by whatever the failed pull holds. */}
-            {ingest.error ? <div style={{ color: '#b4661a', marginBottom: 2 }}>{ingest.error}.</div> : null}
+            {ingest.error ? <div style={{ color: '#D97706', marginBottom: 2 }}>{ingest.error}.</div> : null}
             {parts.join(' ')}
         </div>
     )

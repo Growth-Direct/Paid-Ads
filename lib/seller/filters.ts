@@ -1,5 +1,4 @@
 import type { SellerFact } from './facts'
-import { mappedMicromarket } from './shared'
 
 // An empty array means "no filter on this dimension", not "match nothing".
 export interface Period {
@@ -52,18 +51,9 @@ export function hasDimensionFilter(f: SellerFilters): boolean {
  *  Zoho picklists that disagree on many records, and ticking a cluster in the picker already
  *  ticks its micromarkets — so once micromarkets are selected they carry the whole intent and
  *  the cluster check is skipped. Micromarket is count-in-both: carrying two micromarkets
- *  matches either.
- *
- *  'Unmapped' is a special picker value (added 2026-09-24), not a literal Truva_Micromarket
- *  string — it matches whenever this seller's PRIMARY micromarket normalizes to 'Unmapped' (see
- *  `mappedMicromarket`: blank or unrecognised, e.g. live junk like "Outside MM"), mirroring how
- *  every chart already buckets "primary micromarket" for consistency between what a chart shows
- *  and what this filter can select. */
+ *  matches either. */
 export function placeMatches(micromarkets: string[], clusters: string[], f: SellerFilters): boolean {
-    if (f.micromarkets.length > 0) {
-        if (f.micromarkets.includes('Unmapped') && mappedMicromarket(micromarkets) === 'Unmapped') return true
-        return micromarkets.some((m) => f.micromarkets.includes(m))
-    }
+    if (f.micromarkets.length > 0) return micromarkets.some((m) => f.micromarkets.includes(m))
     if (f.clusters.length > 0) return clusters.some((c) => f.clusters.includes(c))
     return true
 }

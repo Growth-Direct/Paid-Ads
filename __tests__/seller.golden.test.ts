@@ -3,7 +3,6 @@ import { EMPTY_SELLER_FILTERS, type SellerFilters } from '@/lib/seller/filters'
 import { foldSellerStatus, isSellerQualified, mapSellerChannel } from '@/lib/seller/shared'
 import type { SellerFact, SellerFacts, SellerProductFact, SellerSpendFact } from '@/lib/seller/facts'
 import { EMPTY_SELLER_SPEND_INGEST } from '@/lib/seller/spend/parse'
-import { SELLER_MICROMARKETS } from '@/lib/seller/types'
 import { describe, expect, it } from 'vitest'
 
 // Characterisation test for the seller cards. A hand-built fact fixture, run through the real
@@ -35,8 +34,6 @@ function seller(p: Partial<SellerFact> & { createdAt: string; rawSource: string 
         micromarkets: p.micromarkets ?? ['Powai'],
         clusters: p.clusters ?? [],
         createdAt: p.createdAt,
-        responseAt: p.responseAt ?? null,
-        acefoneLeadId: p.acefoneLeadId ?? null,
     }
 }
 
@@ -75,9 +72,8 @@ const sellers: SellerFact[] = [
     // the 2026-09-07 Notion update (MoU signing date must fall in the current quarter) drops
     // this from Old Conversions, even though the status alone would have qualified before.
     seller({ id: 'S10', createdAt: ISO(6, 1), rawSource: 'Meta', micromarkets: ['Powai'], inPopulation: false }),
-    // New cohort, "Already sold the flat" — a lead, AND a QL again. The 2026-09-07 Notion update
-    // dropped this status from the qualified set; a 2026-09-24 explicit growth-team request
-    // reinstated it dashboard-wide (see the 'reinstates "Already sold the flat"' test below).
+    // New cohort, "Already sold the flat" — a lead, but NOT a QL. Proves the 2026-09-07
+    // Notion update dropped this status from the qualified set (it used to count).
     seller({ id: 'S11', createdAt: ISO(7, 16), rawSource: 'Meta', micromarkets: ['Powai'], callStatusRaw: 'Already sold the flat' }),
     // New cohort, "Prospect" — a lead, AND a QL. Proves the same update added this status
     // (sellers.Call_Status, a live field — not to be confused with the retired, zero-row
@@ -89,59 +85,57 @@ const products: SellerProductFact[] = [
     // S1: Case 3 (always counts), has a date incidentally — dates never gate Case 3. Same
     // Visit_Date as the MoU Signed property below, so both land in the same week/source on
     // Property Visits by Source — used to prove that chart doesn't dedupe by seller.
-    { sellerId: 'S1', acqStatus: 'Valuation Completed', visitDate: '2026-07-15', mouSigningDate: null, createdAt: '2026-07-10T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
-    // S1: MoU Signed → a new conversion, and a Case-3 qualifying property too. Also carries a
-    // Min_Guarantee, so it's one of the two properties behind the "GMV Acquired" row's sum.
-    { sellerId: 'S1', acqStatus: 'MoU Signed', visitDate: '2026-07-15', mouSigningDate: '2026-08-05', createdAt: '2026-07-10T09:00:00+05:30', minGuarantee: 5000000, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S1', acqStatus: 'Valuation Completed', visitDate: '2026-07-15', mouSigningDate: null, createdAt: '2026-07-10T09:00:00+05:30' },
+    // S1: MoU Signed → a new conversion, and a Case-3 qualifying property too.
+    { sellerId: 'S1', acqStatus: 'MoU Signed', visitDate: '2026-07-15', mouSigningDate: '2026-08-05', createdAt: '2026-07-10T09:00:00+05:30' },
     // S1: Junk (Case 1, never a qualifying visit) — but S1 IS Qualified, so this counts toward
     // Qualified Properties (any status) even though it never counts toward Qualified Property
     // Visits. Proves the two float boxes are genuinely different numbers.
-    { sellerId: 'S1', acqStatus: 'Junk', visitDate: null, mouSigningDate: null, createdAt: '2026-07-10T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S1', acqStatus: 'Junk', visitDate: null, mouSigningDate: null, createdAt: '2026-07-10T09:00:00+05:30' },
     // S2: Case 3, would qualify on status alone, but S2 is Not qualified → excluded from both
     // Qualified Properties and Qualified Property Visits by the Call_Status gate.
-    { sellerId: 'S2', acqStatus: 'Deal Lost', visitDate: '2026-07-13', mouSigningDate: null, createdAt: '2026-07-12T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S2', acqStatus: 'Deal Lost', visitDate: '2026-07-13', mouSigningDate: null, createdAt: '2026-07-12T09:00:00+05:30' },
     // S3: Case 2 (Internally Rejected et al.) WITH a Visit_Date → counts. Dated 3 Aug, a
     // DIFFERENT week than S3's own creation (20 Jul) — proves Property Visits by Source
     // attributes on the property's own Visit_Date, not the seller's week.
-    { sellerId: 'S3', acqStatus: 'Pitched to Seller', visitDate: '2026-08-03', mouSigningDate: null, createdAt: '2026-07-20T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S3', acqStatus: 'Pitched to Seller', visitDate: '2026-08-03', mouSigningDate: null, createdAt: '2026-07-20T09:00:00+05:30' },
     // S3: second qualifying property, Case 3 with no Visit_Date → still counts (no date needed
     // for Case 3), falling back to the seller's own creation date (20 Jul) for attribution.
     // Same seller, so this does not add a second unique-seller visit.
-    { sellerId: 'S3', acqStatus: 'Negotiations', visitDate: null, mouSigningDate: null, createdAt: '2026-07-20T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S3', acqStatus: 'Negotiations', visitDate: null, mouSigningDate: null, createdAt: '2026-07-20T09:00:00+05:30' },
     // S4 (old cohort, created before the quarter): MoU Signed (Case 3) → an old visit + old
     // conversion. S4 defaults to Qualified, but it's outside this window's Qualified Leads
-    // population (not in `windowSellers`), so it never counts toward Qualified Properties. Also
-    // carries a Min_Guarantee — the OLD-cohort half of the "GMV Acquired" row's sum.
-    { sellerId: 'S4', acqStatus: 'MoU Signed', visitDate: '2026-08-01', mouSigningDate: '2026-08-01', createdAt: '2026-06-01T09:00:00+05:30', minGuarantee: 3000000, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    // population (not in `windowSellers`), so it never counts toward Qualified Properties.
+    { sellerId: 'S4', acqStatus: 'MoU Signed', visitDate: '2026-08-01', mouSigningDate: '2026-08-01', createdAt: '2026-06-01T09:00:00+05:30' },
     // S6: Case 2 with NO Visit_Date → does not count as a qualifying visit (no fallback), but
     // DOES count toward Qualified Properties (any status), since S6 is Qualified. Created the
     // same week as S6 itself (14 Jul).
-    { sellerId: 'S6', acqStatus: 'Internally Rejected', visitDate: null, mouSigningDate: null, createdAt: '2026-07-14T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S6', acqStatus: 'Internally Rejected', visitDate: null, mouSigningDate: null, createdAt: '2026-07-14T09:00:00+05:30' },
     // S2: scheduled but not yet visited — would be a New-cohort pipeline property on status
     // alone, but S2 is Not qualified → excluded by the same gate as qualifying properties.
-    { sellerId: 'S2', acqStatus: 'Visit Scheduled', visitDate: null, mouSigningDate: null, createdAt: '2026-07-12T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S2', acqStatus: 'Visit Scheduled', visitDate: null, mouSigningDate: null, createdAt: '2026-07-12T09:00:00+05:30' },
     // S6: Qualified, so this pipeline property counts toward both pipelineCount and Qualified
     // Properties. Same week as S6 itself (14 Jul) — together with the property above, this
     // gives S6 TWO properties in the same week/source, proving Qualified Properties by
     // Source's drill-down lists one entry per property (not deduped to the seller).
-    { sellerId: 'S6', acqStatus: 'Visit to be Scheduled', visitDate: null, mouSigningDate: null, createdAt: '2026-07-14T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S6', acqStatus: 'Visit to be Scheduled', visitDate: null, mouSigningDate: null, createdAt: '2026-07-14T09:00:00+05:30' },
     // S6: a THIRD property, created a different week (21 Jul) than S6 itself (14 Jul) — proves
     // Qualified Properties by Source attributes on the property's own Created_Time, not the
     // seller's: S6 shows up in two different weeks on this chart.
-    { sellerId: 'S6', acqStatus: 'Junk', visitDate: null, mouSigningDate: null, createdAt: '2026-07-21T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S6', acqStatus: 'Junk', visitDate: null, mouSigningDate: null, createdAt: '2026-07-21T09:00:00+05:30' },
     // S8 (old cohort): Case 3, no Visit_Date. Old-cohort rule has no "always counts" fallback,
     // so this must NOT count as an Old qualifying visit — even though the identical status
     // would count unconditionally for a New-cohort seller (see S1's Valuation Completed).
-    { sellerId: 'S8', acqStatus: 'Deal Lost', visitDate: null, mouSigningDate: null, createdAt: '2026-06-01T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S8', acqStatus: 'Deal Lost', visitDate: null, mouSigningDate: null, createdAt: '2026-06-01T09:00:00+05:30' },
     // S9 (old cohort): Case 2, Visit_Date present but BEFORE the window (2026-05-01, window
     // starts 2026-07-05). Must NOT count — Old needs the date falling IN the current quarter,
     // not merely present.
-    { sellerId: 'S9', acqStatus: 'Recycled', visitDate: '2026-05-01', mouSigningDate: null, createdAt: '2026-06-01T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S9', acqStatus: 'Recycled', visitDate: '2026-05-01', mouSigningDate: null, createdAt: '2026-06-01T09:00:00+05:30' },
     // S10 (old cohort): MoU Signed, but Seller_MoU_Signing_Date (2026-04-01) is before the
     // window (starts 2026-07-05) — must NOT count as a conversion. No Visit_Date, so it's
     // already excluded from Old visits by the Case-3-no-date rule (S8's scenario), isolating
     // this test to the conversion-specific date gate.
-    { sellerId: 'S10', acqStatus: 'MoU Signed', visitDate: null, mouSigningDate: '2026-04-01', createdAt: '2026-06-01T09:00:00+05:30', minGuarantee: 0, source: '', valuationRequestDate: null, pricingCompletionDate: null, offerDate: null },
+    { sellerId: 'S10', acqStatus: 'MoU Signed', visitDate: null, mouSigningDate: '2026-04-01', createdAt: '2026-06-01T09:00:00+05:30' },
 ]
 
 // No spend in the fixture, so the snapshot locks every Spend/cost row at null — the point is
@@ -177,202 +171,68 @@ describe('seller deriveReport golden', () => {
         expect(report).toMatchSnapshot()
     })
 
-    it('splits WoW Property Visits by the PROPERTY\'s own Source into Direct vs Channel Partner', () => {
-        // S1 already has a qualifying visit with source: '' (Direct, per the fixture default).
-        // Add a second qualifying property, same week, explicitly Source = 'Channel Partner'.
-        const cpSeller = seller({ id: 'SDCP', createdAt: ISO(7, 10), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const cpProduct: SellerProductFact = {
-            sellerId: 'SDCP',
-            acqStatus: 'Valuation Completed',
-            visitDate: '2026-07-15',
-            mouSigningDate: null,
-            createdAt: '2026-07-10T09:00:00+05:30',
-            minGuarantee: 0,
-            source: 'Channel Partner',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const withCp = deriveReport({ ...facts, sellers: [...facts.sellers, cpSeller], products: [...facts.products, cpProduct] }, opts)
-        const bucket = withCp.propertyVisitsByDirectCp.find((w) => w.weekStart === '2026-07-13')!
-        expect(bucket.counts['Direct']).toBe(2) // S1's own two visits that week (see the base snapshot)
-        expect(bucket.counts['Channel Partner']).toBe(1)
-    })
-
-    it('computes FRT (First Response Time) from EE_Response_Time - Created_Time, working hours only, Acefone-gated', () => {
-        // Working-hours seller (10AM IST) with a real Acefone lead id and a response 30 minutes
-        // later — must produce a real, non-null FRT bucket.
-        const frtSeller = seller({
-            id: 'SF1',
-            createdAt: '2026-07-10T10:00:00+05:30',
-            rawSource: 'Meta',
-            acefoneLeadId: 'ACE1',
-            responseAt: '2026-07-10T10:30:00+05:30',
-        })
-        // Same working hours and response, but NO Acefone lead id — must be excluded.
-        const noAcefoneSeller = seller({
-            id: 'SF2',
-            createdAt: '2026-07-10T10:00:00+05:30',
-            rawSource: 'Meta',
-            acefoneLeadId: null,
-            responseAt: '2026-07-10T10:30:00+05:30',
-        })
-        // Created at 8PM IST (after working hours) — must be excluded even with a real Acefone id.
-        const afterHoursSeller = seller({
-            id: 'SF3',
-            createdAt: '2026-07-10T20:00:00+05:30',
-            rawSource: 'Meta',
-            acefoneLeadId: 'ACE3',
-            responseAt: '2026-07-10T20:15:00+05:30',
-        })
-        const withFrt = deriveReport(
-            { ...facts, sellers: [...facts.sellers, frtSeller, noAcefoneSeller, afterHoursSeller] },
-            opts
-        )
-        const bucket = withFrt.frtByWeek.find((w) => w.weekStart === '2026-07-06')!
-        expect(bucket.count).toBe(1)
-        expect(bucket.avgMinutes).toBe(30)
-    })
-
-    it('shows Attempted to Contact % and Not Qualified % as a share of Total Leads, with no grid target', () => {
-        // S5 (Organic Vegas, telephony junk 'Network Issue' folded to Attempted to Contact) and
-        // S2 (99acres Glasgow, 'Not qualified') are the only two matches in the New-cohort
-        // population for the default (unfiltered) scope. Total Leads (New cohort) is 7, so each
-        // is 1/7 = 14.3%. Changed from an absolute count to a % of Total Leads 2026-09-24, per
-        // an explicit growth-team request ("ATC% and NQ% in place of absolute numbers").
-        const atc = row('Attempted to Contact %')
-        const nq = row('Not Qualified %')
-        expect(atc.qAchieved).toBe(14.3)
-        expect(nq.qAchieved).toBe(14.3)
-        // No grid target exists for either, same treatment as Visits in Pipeline.
-        expect(atc.qTargetFull).toBeNull()
-        expect(nq.qTargetFull).toBeNull()
-        expect(atc.qTarget).toBeNull()
-        expect(nq.qTarget).toBeNull()
-    })
-
-    it("uses the sheet's own 'All clusters' row (plus Bangalore) for the truly unfiltered Overall target, not a sum of the 9 micromarkets", () => {
-        // Confirmed with the user 2026-09-24: summing the 9 named-micromarket 'Overall' rows
-        // gives a materially different (and wrong) LTQL — 29% vs the sheet's own headline 14.8%
-        // (Leads 4723, QL 701 — the 'All clusters' row PLUS Bangalore, added 2026-09-24 once the
-        // same Bangalore-omission gap already fixed for every other channel turned out to apply
-        // here too) — because the sheet's own total doesn't decompose the way a simple
-        // per-micromarket sum would. See ALL_CLUSTERS_TOTAL's doc comment in targets.ts.
-        expect(row('Total Leads').qTargetFull).toBe(4723)
-        expect(row('Total Qualified Seller Leads').qTargetFull).toBe(701)
-        expect(row('LTQL %').qTargetFull).toBe(14.8)
-
-        // A Channel or Cluster/MM filter still sums the grid as before — this override applies
-        // ONLY to the true no-filter case.
-        const filtered = deriveReport(facts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, channels: ['Paid Ads'] } })
-        const filteredRow = (metric: string) => filtered.targetVsAchieved.find((r) => r.metric === metric)!
-        expect(filteredRow('Total Leads').qTargetFull).not.toBe(4147)
-    })
-
-    it('sums GMV Acquired over the same MoU-Signed population as Total Property Conversions, New+Old combined', () => {
-        // S1 (New, ₹50L) and S4 (Old, ₹30L) are the two MoU Signed properties in-window — the
-        // same two behind Total Property Conversions' qAchieved of 2. Unconditional on the
-        // conversionScope pill (opts pins it to New-only), same as Spend itself.
-        const gmv = row('GMV Acquired')
-        expect(gmv.qAchieved).toBe(8000000)
-        expect(gmv.qTargetFull).toBeNull()
-        expect(gmv.qTarget).toBeNull()
-
-        // % Spends of GMV = Spend / GMV * 100 — no spend in this fixture, so it's null (0/x is
-        // still a real ratio, but ratioPct itself guards the DENOMINATOR being 0, not the
-        // numerator, so a 0 numerator correctly reads as a real 0%, not blank).
-        const pct = row('% Spends of GMV')
-        expect(pct.qAchieved).toBe(0)
-    })
-
-    it('computes nextW2TargetProRata as a deficit-based catch-up, separate from the flat nextW2Target', () => {
-        // Total Leads is well behind pace in this fixture (qAchieved 7 vs qTargetFull well above
-        // it) — the pro-rata figure spreads the FULL remaining deficit over the days left, so it
-        // must be steeper (higher) than the flat run-rate nextW2Target for the same metric.
-        const totalLeads = row('Total Leads')
-        expect(totalLeads.qTargetFull).not.toBeNull()
-        expect(totalLeads.nextW2TargetProRata).not.toBeNull()
-        expect(totalLeads.nextW2TargetProRata!).toBeGreaterThan(totalLeads.nextW2Target!)
-
-        // Rate metrics skip the deficit math entirely and just carry the flat qTargetFull —
-        // same as nextW2Target already does for them.
-        const ltql = row('LTQL %')
-        expect(ltql.nextW2TargetProRata).toBe(ltql.qTargetFull)
-        expect(ltql.nextW2TargetProRata).toBe(ltql.nextW2Target)
-
-        // A metric with no grid target at all (qTargetFull null — Visits in Pipeline isn't a
-        // visit count, so there's nothing to reuse) floors to a real 0, not null — matches the
-        // confirmed "no coverage -> 0" rule.
-        const pipeline = row('Visits in Pipeline')
-        expect(pipeline.qTargetFull).toBeNull()
-        expect(pipeline.nextW2TargetProRata).toBe(0)
-    })
-
     it('counts population sellers only, deduped by phone', () => {
         expect(row('Total Leads').qAchieved).toBe(7) // S1, S2, S3, S5, S6, S11, S12 — S4 is old cohort, out of population
-        // S1 (Qualified), S3 (Explore Later), S6 (Qualified), S11 (Already sold the flat), S12
-        // (Prospect) — reinstated 2026-09-24, see SELLER_QUALIFIED_STATUSES's own doc comment.
-        expect(row('Total Qualified Seller Leads').qAchieved).toBe(5)
+        // S1 (Qualified), S3 (Explore Later), S6 (Qualified), S12 (Prospect) — S11 (Already
+        // sold the flat) is NOT qualified since the 2026-09-07 update dropped that status.
+        expect(row('Total Qualified Seller Leads').qAchieved).toBe(4)
     })
 
-    it('reinstates "Already sold the flat" as Qualified, dashboard-wide (2026-09-24 reversal of the 2026-09-07 change)', () => {
-        // Verified directly against the Notion doc back on 2026-09-07: Qualified Seller Leads
-        // used to be Qualified/Explore Later/Already sold the flat, became Qualified/Explore
-        // Later/Prospect. Reinstated 2026-09-24 per an explicit growth-team request — now
-        // Qualified/Explore Later/Prospect/Already sold the flat, a deliberate dashboard
-        // divergence from the Notion doc as of this date.
+    it('reflects the 2026-09-07 qualified-set change: Prospect in, Already sold the flat out', () => {
+        // Verified directly against the Notion doc: Qualified Seller Leads used to be
+        // Qualified/Explore Later/Already sold the flat, now Qualified/Explore Later/Prospect.
         expect(report.sellersById['S11']).toBeDefined() // Already sold the flat — still a lead
         expect(report.sellersById['S12']).toBeDefined() // Prospect — still a lead
+        // Both are New-cohort population sellers, so if QL counted 5 instead of 4, S11 (the
+        // dropped status) would be the extra one — this pins down which status moved, not
+        // just the aggregate count.
         const qlIds = new Set(
             report.leadsByStatus.flatMap((p) => Object.entries(p.leadIds)).flatMap(([status, ids]) =>
                 status === 'Already sold the flat' || status === 'Prospect' ? ids : []
             )
         )
-        expect(qlIds.has('S11')).toBe(true)
+        expect(qlIds.has('S11')).toBe(true) // present as a lead...
         expect(qlIds.has('S12')).toBe(true)
-        expect(report.overallFunnel.qualified.actual).toBe(5) // both S11 and S12 count toward QL now
+        expect(report.overallFunnel.qualified.actual).toBe(4) // ...but only S12 counts toward QL
     })
 
-    it('counts New Visits as UNIQUE SELLERS with >=1 qualifying property', () => {
+    it('counts Seller Visits as UNIQUE SELLERS with >=1 qualifying property, scoped to New when the visit scope pill is New-only', () => {
         // Deliberate departure from the skill's per-property definition (see the doc comment
         // on Actuals.visits in derive.ts) — S1 and S3 each have >=1 qualifying property, so
-        // New Visits is 2. S2's qualifying-looking property is gated out (not a Qualified
+        // Seller Visits is 2. S2's qualifying-looking property is gated out (not a Qualified
         // seller); S6's only property is Case 2 with no date, so it never qualifies in the
-        // first place. S4 is Old cohort, so it never counts toward New — the funnel's New/Old
-        // arms are unconditional now (see the 'stay the same regardless of the scope pills'
-        // test below), not gated by filters.visitScope the way the old single node was.
-        expect(report.overallFunnel.newVisits.actual).toBe(2)
+        // first place. S4's product is old cohort, excluded when the scope is New-only (this
+        // suite's pinned `opts` — see its comment; the app's real default is New+Old, see the
+        // 'defaults visitScope/conversionScope to New+Old' test below).
+        // The Overall Funnel's own single number stays scoped to the visitScope filter. The
+        // Target vs Achieved table's own "Unique Seller Total Visits" row is a DIFFERENT,
+        // unconditional New+Old total (see the later "shows ... unconditionally" test), so this
+        // assertion targets the funnel, not the table.
+        expect(report.overallFunnel.uniqueSellerVisits.actual).toBe(2)
     })
 
-    it("the funnel's New/Old arms and total stay the same regardless of the Visits/Conversions scope pills — unconditional now, mirroring the Target vs Achieved table's own New/Old rows", () => {
+    it('defaults visitScope/conversionScope to New+Old — changed 2026-09-09, per an explicit growth-team request', () => {
         // EMPTY_SELLER_FILTERS is the app's real default (SellerTab's initial React state) — this
-        // suite's own `opts` pins the scope pills to New-only instead (see the comment on `opts`
-        // above). The funnel no longer has a single pill-scoped number to compare — both arms
-        // always show — so this test proves that directly: the same facts, run through two very
-        // different scope-pill selections, produce identical funnel numbers.
+        // suite's own `opts` pins it to New-only instead (see the comment on `opts` above), so
+        // this test exercises EMPTY_SELLER_FILTERS directly rather than `opts.filters`.
         expect(EMPTY_SELLER_FILTERS.visitScope).toEqual(['New', 'Old'])
         expect(EMPTY_SELLER_FILTERS.conversionScope).toEqual(['New', 'Old'])
         const both = deriveReport(facts, { ...opts, filters: EMPTY_SELLER_FILTERS })
-        // S1+S3 New, S4 Old = 3 unique seller visits total; S1 New + S4 Old = 2 conversions total.
-        expect(both.overallFunnel.newVisits.actual).toBe(2)
-        expect(both.overallFunnel.oldVisits.actual).toBe(1)
-        expect(both.overallFunnel.totalVisits.actual).toBe(3)
-        expect(both.overallFunnel.newConversions.actual).toBe(1)
-        expect(both.overallFunnel.oldConversions.actual).toBe(1)
-        expect(both.overallFunnel.totalConversions.actual).toBe(2)
-        // `report` uses `opts`' New-only scope pin — identical numbers either way.
-        expect(report.overallFunnel.newVisits.actual).toBe(both.overallFunnel.newVisits.actual)
-        expect(report.overallFunnel.oldVisits.actual).toBe(both.overallFunnel.oldVisits.actual)
+        // S1+S3 (New) + S4 (Old) = 3 unique seller visits, and S1 (New) + S4 (Old) = 2
+        // conversions, once both cohorts are in scope — matching the Target vs Achieved table's
+        // own unconditional readings for the same two metrics (see the "shows ... unconditionally"
+        // test), which is exactly the point: New+Old scoped now equals the unconditional total.
+        expect(both.overallFunnel.uniqueSellerVisits.actual).toBe(3)
+        expect(both.overallFunnel.conversions.actual).toBe(2)
     })
 
     it('applies the three-case rule and the Qualified-seller gate to qualifying properties and pipeline', () => {
         // S1: 2 Case-3 properties (Junk doesn't count here). S3: 1 Case-2-with-date +
         // 1 Case-3-no-date, both count. S2's Case-3 property is excluded by the gate (Not
         // qualified). S6's Case-2-no-date property never qualifies regardless of the gate.
-        // Total: 2 + 2 = 4. The per-property count now lives only on the Target vs Achieved
-        // table ("New Property Visits") — the funnel itself dropped its property-level floats.
-        expect(row('New Property Visits').qAchieved).toBe(4)
-        expect(report.overallFunnel.newVisits.actual).toBe(2)
+        // Total: 2 + 2 = 4.
+        expect(report.overallFunnel.qualifyingProperties).toBe(4)
+        expect(report.overallFunnel.uniqueSellerVisits.actual).toBe(2)
         // S2's pipeline property is gated out (Not qualified); S6's counts (Qualified).
         expect(report.overallFunnel.pipelineCount).toBe(1)
     })
@@ -383,9 +243,7 @@ describe('seller deriveReport golden', () => {
         // Rejected one and a second Junk one. S2 (Not qualified) and S4 (outside this window's
         // population) contribute nothing, even though S4 is itself Qualified. S12 (Prospect,
         // qualified) has no properties at all, so it contributes zero too. Total: 3 + 2 + 3 = 8.
-        // Lives only on the table now ("Qualified Property Leads") — removed from the funnel,
-        // which is entirely seller-level since the 2026-09-21 New/Old-arm redesign.
-        expect(row('Qualified Property Leads').qAchieved).toBe(8)
+        expect(report.overallFunnel.qualifiedSellerProperties).toBe(8)
     })
 
     it('counts New-cohort MoU conversions by default', () => {
@@ -393,20 +251,18 @@ describe('seller deriveReport golden', () => {
     })
 
     it('computes the three rates as percentages', () => {
-        expect(report.ltqlPct).toBe(71.4) // QL 5 (incl. S11, "Already sold the flat") / Leads 7
-        // Unique Seller Visits (2) and QL (5) are not a subset relationship by construction —
+        expect(report.ltqlPct).toBe(57.1) // QL 4 / Leads 7
+        // Unique Seller Visits (2) and QL (4) are not a subset relationship by construction —
         // a seller can have a qualifying property without ever being marked Qualified elsewhere
         // in a real quarter — so this can land anywhere, including above 100%.
-        expect(report.qltvPct).toBe(40) // Unique Seller Visits 2 / QL 5
+        expect(report.qltvPct).toBe(50) // Unique Seller Visits 2 / QL 4
         expect(report.convRatePct).toBe(50) // Conversions 1 / Unique Seller Visits 2
     })
 
     it('computes rate targets from ratios of the target grid\'s own values', () => {
         expect(report.overallFunnel.ltqlTarget).toBeGreaterThan(0)
-        expect(report.overallFunnel.newQltvTarget).toBeGreaterThan(0)
-        expect(report.overallFunnel.oldQltvTarget).toBeGreaterThan(0)
-        expect(report.overallFunnel.newConvRateTarget).toBeGreaterThan(0)
-        expect(report.overallFunnel.oldConvRateTarget).toBeGreaterThan(0)
+        expect(report.overallFunnel.qltvTarget).toBeGreaterThan(0)
+        expect(report.overallFunnel.convRateTarget).toBeGreaterThan(0)
     })
 
     it('folds telephony junk into Attempted to Contact on the status chart', () => {
@@ -440,27 +296,24 @@ describe('seller deriveReport golden', () => {
         expect(bucket).toBeDefined()
     })
 
-    it('attributes WoW Property Visits to the qualifying property\'s own Visit_Date, excluding a date-less Case-3 property outright (no seller-week fallback)', () => {
-        // S3 has two qualifying properties: 'Negotiations' (no Visit_Date) and 'Pitched to
-        // Seller' (dated 3 Aug). Rebuilt 2026-09-24, per an explicit growth-team request, WITHOUT
-        // the Case-3 seller-creation-date fallback every other visit metric on this tab still
-        // uses (e.g. sellerVisitsByChannel/leadsByChannel) — an event chart can't place an
-        // undated event, so the date-less property is excluded from this chart entirely rather
-        // than mis-dated to S3's own 20 Jul creation week.
+    it('attributes Property Visits by Channel to the qualifying property\'s own Visit_Date, not the seller\'s week', () => {
+        // S3 has two qualifying properties: 'Negotiations' (no date, falls back to S3's own
+        // 20 Jul creation week) and 'Pitched to Seller' (dated 3 Aug). It should therefore
+        // appear in TWO different weeks here — one matching its own creation week, one not.
         const s3LeadsWeek = report.leadsByChannel.find((p) => (p.leadIds['Cold Outreach'] ?? []).includes('S3'))!.weekStart
-        const s3VisitWeeks = report.propertyVisitsByCohort
-            .filter((p) => (p.leadIds['New'] ?? []).includes('S3'))
+        const s3VisitWeeks = report.propertyVisitsByChannel
+            .filter((p) => (p.leadIds['Cold Outreach'] ?? []).includes('S3'))
             .map((p) => p.weekStart)
-        expect(s3VisitWeeks).not.toContain(s3LeadsWeek) // the no-date Negotiations property: excluded
-        expect(s3VisitWeeks.length).toBe(1) // only the dated Pitched to Seller appears
+        expect(s3VisitWeeks).toContain(s3LeadsWeek) // the no-date Negotiations fallback
+        expect(s3VisitWeeks.some((w) => w !== s3LeadsWeek)).toBe(true) // the dated Pitched to Seller
     })
 
-    it('dedupes Seller Visits by Channel per seller per bucket; WoW Property Visits does not', () => {
+    it('dedupes Seller Visits by Channel per seller per bucket; Property Visits by Channel does not', () => {
         // S1's two qualifying properties (Valuation Completed, MoU Signed) share a Visit_Date,
-        // so both land in the same week/cohort on WoW Property Visits (keyed 'New', S1's cohort).
-        const propertyBucket = report.propertyVisitsByCohort.find((p) => (p.leadIds['New'] ?? []).includes('S1'))!
+        // so both land in the same week/channel.
+        const propertyBucket = report.propertyVisitsByChannel.find((p) => (p.leadIds['Paid Ads'] ?? []).includes('S1'))!
         const sellerBucket = report.sellerVisitsByChannel.find((p) => (p.leadIds['Paid Ads'] ?? []).includes('S1'))!
-        expect(propertyBucket.leadIds['New']!.filter((id) => id === 'S1').length).toBe(2) // one per property
+        expect(propertyBucket.leadIds['Paid Ads']!.filter((id) => id === 'S1').length).toBe(2) // one per property
         expect(sellerBucket.leadIds['Paid Ads']!.filter((id) => id === 'S1').length).toBe(1) // deduped
     })
 
@@ -502,54 +355,7 @@ describe('seller deriveReport golden', () => {
         // New (S1, S3 — 2) + Old (S4 — 1) = 3, unconditionally, unlike the Overall Funnel's own
         // scoped `uniqueSellerVisits.actual` (2, New only by default — see the earlier test).
         expect(row('Unique Seller Total Visits').qAchieved).toBe(3)
-        // Renamed from 'Total Conversions' — this table row was always property-level/undeduped;
-        // the Overall Funnel (Unique Seller)'s own Conversions arms are now seller-deduped
-        // instead (see the dedicated seller-dedup test below), which is why the two can disagree.
-        expect(row('Total Property Conversions').qAchieved).toBe(2) // New (S1) + Old (S4)
-    })
-
-    it("dedupes the Overall Funnel (Unique Seller)'s Conversions to one per seller, unlike the table or the Overall Funnel (Unique Property)", () => {
-        // The main fixture has no seller with 2+ converted properties, so it can't distinguish
-        // deduped from undeduped — S1 and S4 each have exactly one, and both readings happen to
-        // agree by coincidence. Build one seller with two MoU Signed properties to actually prove
-        // the dedup: property-level count goes up by 2, seller-deduped count goes up by only 1.
-        const dualConvertSeller = seller({ createdAt: ISO(7, 18), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const dualConvertProducts: SellerProductFact[] = [
-            {
-                sellerId: dualConvertSeller.id,
-                acqStatus: 'MoU Signed',
-                visitDate: '2026-07-20',
-                mouSigningDate: '2026-08-10',
-                createdAt: dualConvertSeller.createdAt,
-                minGuarantee: 0,
-                source: '',
-                valuationRequestDate: null,
-                pricingCompletionDate: null,
-                offerDate: null,
-            },
-            {
-                sellerId: dualConvertSeller.id,
-                acqStatus: 'MoU Signed',
-                visitDate: '2026-07-25',
-                mouSigningDate: '2026-08-12',
-                createdAt: dualConvertSeller.createdAt,
-                minGuarantee: 0,
-                source: '',
-                valuationRequestDate: null,
-                pricingCompletionDate: null,
-                offerDate: null,
-            },
-        ]
-        const withDual = deriveReport(
-            { ...facts, sellers: [...facts.sellers, dualConvertSeller], products: [...facts.products, ...dualConvertProducts] },
-            opts
-        )
-        // Property-level (undeduped): S1's 1 + this seller's 2 = 3 — matches the table and the
-        // Overall Funnel (Unique Property).
-        expect(withDual.targetVsAchieved.find((r) => r.metric === 'New Conversions')!.qAchieved).toBe(3)
-        expect(withDual.overallFunnelProperty.newConversions.actual).toBe(3)
-        // Seller-deduped: S1 (1 seller) + this seller (1 seller, despite its 2 properties) = 2.
-        expect(withDual.overallFunnel.newConversions.actual).toBe(2)
+        expect(row('Total Conversions').qAchieved).toBe(2) // New (S1) + Old (S4)
     })
 
     it('computes QLTV % on New visits only, even when the visit scope filter is set to Old', () => {
@@ -557,123 +363,49 @@ describe('seller deriveReport golden', () => {
             ...opts,
             filters: { ...EMPTY_SELLER_FILTERS, visitScope: ['Old'], conversionScope: ['Old'] },
         })
-        // QLTV % must still read New visits (2) over QL (5) = 40%, regardless of the Old-only
+        // QLTV % must still read New visits (2) over QL (4) = 50%, regardless of the Old-only
         // scope filter selected for the Overall Funnel's own single number.
-        expect(oldScope.targetVsAchieved.find((r) => r.metric === 'QLTV %')!.qAchieved).toBe(40)
+        expect(oldScope.targetVsAchieved.find((r) => r.metric === 'QLTV %')!.qAchieved).toBe(50)
     })
 
-    it('reuses the seller-level visit targets for the three Property Visits rows; Visits in Pipeline still has none', () => {
-        // Added 2026-09-24 per the user: the property-visit rows are the property-level reading
-        // of the exact same underlying visit population as the seller-level rows above them, so
-        // they now share that same target instead of showing a dash — no separate grid column
-        // exists (or is needed) for property-level visits specifically.
-        expect(row('Unique Property Total Visits').qTargetFull).toBe(row('Unique Seller Total Visits').qTargetFull)
-        expect(row('New Property Visits').qTargetFull).toBe(row('Unique Seller New Visits').qTargetFull)
-        expect(row('Old Property Visits').qTargetFull).toBe(row('Unique Seller Old Visits').qTargetFull)
-        expect(row('Unique Property Total Visits').qTargetFull).not.toBeNull()
-        // Visits in Pipeline isn't a visit count at all — still nothing to reuse, stays null.
+    it('has no target for the three Property Visits rows or Visits in Pipeline (no grid column)', () => {
+        expect(row('Total Property Visits').qTarget).toBeNull()
+        expect(row('New Property Visits').qTarget).toBeNull()
+        expect(row('Old Property Visits').qTarget).toBeNull()
         expect(row('Visits in Pipeline').qTarget).toBeNull()
-        // The actuals ARE real, sourced from the existing per-property qualifying count. New
-        // (S1 x2, S3 x2) + Old (S4's in-window MoU Signed, Case 3) = 4 + 1 = 5 — same basis as
-        // the Overall Funnel (Unique Property)'s own totalVisits (also unconditional New+Old,
-        // per-property).
-        expect(row('Unique Property Total Visits').qAchieved).toBe(5)
+        // But the actuals ARE real, sourced from the existing per-property qualifying count.
+        // New (S1 x2, S3 x2) + Old (S4's in-window MoU Signed, Case 3) = 4 + 1 = 5 — the
+        // Overall Funnel's own `qualifyingProperties` is 4 because it's scoped to New only by
+        // default; this row is unconditional (New+Old), so it picks up S4 too.
+        expect(row('Total Property Visits').qAchieved).toBe(5)
         expect(row('New Property Visits').qAchieved).toBe(4)
         expect(row('Old Property Visits').qAchieved).toBe(1)
         expect(row('Visits in Pipeline').qAchieved).toBe(1)
     })
 
-    it("counts Visits in Pipeline's Last 2wk Achieved as New-cohort only (leads created in the last 2 weeks), unlike the Quarter column's New+Old live snapshot", () => {
-        // Per an explicit growth-team clarification 2026-09-25 ("the visits in pipeline column
-        // should include people whose leads were created last two weeks and are now in the
-        // pipeline"): the Last 2wk column's own window here is [2026-07-27, 2026-08-10) (opts.now
-        // is 2026-08-15, a Saturday, so the current week starts 2026-08-10).
-        const w2NewSeller = seller({ id: 'SW2NEW', createdAt: ISO(7, 30), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const w2NewProduct: SellerProductFact = {
-            sellerId: 'SW2NEW',
-            acqStatus: 'Visit Scheduled',
-            visitDate: null,
-            mouSigningDate: null,
-            createdAt: w2NewSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        // Old cohort for the w2 reading (created before the quarter, 2026-07-05) — still
-        // "currently in pipeline" today, but per the growth team's own words this isn't a "last
-        // two weeks" figure at all, so it must NOT count here anymore (it still counts in the
-        // Quarter column's own live snapshot, unchanged).
-        const w2OldSeller = seller({
-            id: 'SW2OLD',
-            createdAt: ISO(6, 1),
-            rawSource: 'Meta',
-            micromarkets: ['Powai'],
-            inPopulation: false,
-        })
-        const w2OldProduct: SellerProductFact = {
-            sellerId: 'SW2OLD',
-            acqStatus: 'Visit to be Scheduled',
-            visitDate: null,
-            mouSigningDate: null,
-            createdAt: w2OldSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const withExtra = deriveReport(
-            {
-                ...facts,
-                sellers: [...sellers, w2NewSeller, w2OldSeller],
-                products: [...products, w2NewProduct, w2OldProduct],
-            },
-            opts
-        )
-        const pipeline = withExtra.targetVsAchieved.find((r) => r.metric === 'Visits in Pipeline')!
-        expect(pipeline.w2Achieved).toBe(1) // SW2NEW only
-        // The Quarter column still counts both (its own live "till date" snapshot, unchanged).
-        expect(pipeline.qAchieved).toBeGreaterThanOrEqual(2) // at least SW2NEW + SW2OLD, plus S6 from the base fixture
-    })
-
-    it('reuses Total Qualified Seller Leads\' own target directly for Qualified Property Leads (no more 1.2x placeholder)', () => {
-        // Replaces the earlier "1.2x the Total Leads target" placeholder, per the user
-        // (2026-09-24) — same "share the seller-level target" treatment as the Property Visits
-        // rows above.
-        expect(row('Qualified Property Leads').qTargetFull).toBe(row('Total Qualified Seller Leads').qTargetFull)
-        expect(row('Qualified Property Leads').qTargetFull).not.toBeNull()
-    })
-
-    it('counts Old Visits/Conversions as unique sellers — unaffected by the scope pills either way', () => {
+    it('scopes visits/conversions to Old when the scope flips', () => {
         const old = deriveReport(facts, {
             ...opts,
             filters: { ...EMPTY_SELLER_FILTERS, visitScope: ['Old'], conversionScope: ['Old'] },
         })
         // S4 only, both counts — coincidentally 1 either way here since S4 has exactly one
         // qualifying property, but Seller Visits is the unique-seller count now, not the count
-        // of properties. The scope-pill override above no longer changes the funnel's own
-        // oldVisits/oldConversions (unconditional now) — kept here only because it's a harmless,
-        // already-established fixture shape; report.overallFunnel.oldVisits.actual would be
-        // identical without it.
-        expect(old.overallFunnel.oldVisits.actual).toBe(1)
-        expect(old.overallFunnel.oldConversions.actual).toBe(1)
+        // of properties.
+        expect(old.overallFunnel.uniqueSellerVisits.actual).toBe(1)
+        expect(old.overallFunnel.conversions.actual).toBe(1)
     })
 
     it('gives Old-cohort Case 3 no "always counts" exception, unlike New', () => {
         // Without the cohort-aware fix, S8's date-less Deal Lost (Case 3) would have counted
         // unconditionally, and S9's out-of-window Recycled (Case 2) would have counted on
         // "any date present". Both must contribute zero Old visits — only S4 counts (asserted
-        // above), so this stays at 1 rather than rising to 3. The per-property count now lives
-        // only on the table ("Old Property Visits") — see the earlier "applies the three-case
-        // rule..." test for its New-cohort equivalent.
+        // above), so this stays at 1 rather than rising to 3.
         const old = deriveReport(facts, {
             ...opts,
             filters: { ...EMPTY_SELLER_FILTERS, visitScope: ['Old'], conversionScope: ['Old'] },
         })
-        expect(old.targetVsAchieved.find((r) => r.metric === 'Old Property Visits')!.qAchieved).toBe(1)
-        expect(old.overallFunnel.oldVisits.actual).toBe(1)
+        expect(old.overallFunnel.qualifyingProperties).toBe(1)
+        expect(old.overallFunnel.uniqueSellerVisits.actual).toBe(1)
     })
 
     it('requires Seller_MoU_Signing_Date to fall in the current quarter for a conversion', () => {
@@ -684,7 +416,7 @@ describe('seller deriveReport golden', () => {
             ...opts,
             filters: { ...EMPTY_SELLER_FILTERS, visitScope: ['Old'], conversionScope: ['Old'] },
         })
-        expect(old.overallFunnel.oldConversions.actual).toBe(1)
+        expect(old.overallFunnel.conversions.actual).toBe(1)
     })
 
     it('adds Channel Partner-sourced conversions to Direct for the Overall Funnel\'s Total Conversions float box', () => {
@@ -701,11 +433,6 @@ describe('seller deriveReport golden', () => {
                     visitDate: '2026-08-10',
                     mouSigningDate: '2026-08-10',
                     createdAt: '2026-07-10T09:00:00+05:30',
-                    minGuarantee: 0,
-                    source: '',
-                    valuationRequestDate: null,
-                    pricingCompletionDate: null,
-                    offerDate: null,
                 },
             ],
             channelPartnerPlaces: { CP1: { micromarkets: ['Powai'], clusters: [] } },
@@ -731,87 +458,6 @@ describe('seller deriveReport golden', () => {
             filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Glasgow'] },
         })
         expect(excludingFilter.overallFunnel.totalConversionsWithChannelPartner).toBe(0)
-    })
-
-    it("includes the Channel Partner pool's own qualifying properties in WoW Property Visits — Direct vs. CP, keyed by the property's OWN Source", () => {
-        // CP-sourced SELLERS are excluded from the whole dashboard's population upstream, so
-        // their properties never reached facts.products — this chart is meant to split by the
-        // PROPERTY's own Source, not the seller's, but its "Channel Partner" segment was
-        // structurally near-empty as a result. Fixed 2026-09-24, per an explicit growth-team
-        // report ("cp visits are not showing... need to be mapped on property source"): the
-        // separate Channel Partner pool is scanned too, place-filtered, keyed by Source.
-        const cpFacts = {
-            ...facts,
-            channelPartnerProducts: [
-                {
-                    sellerId: 'CP2',
-                    acqStatus: 'Valuation Completed', // Case 3, always counts
-                    visitDate: '2026-07-15',
-                    mouSigningDate: null,
-                    createdAt: '2026-07-10T09:00:00+05:30',
-                    minGuarantee: 0,
-                    source: 'Channel Partner',
-                    valuationRequestDate: null,
-                    pricingCompletionDate: null,
-                    offerDate: null,
-                },
-                // CP3 belongs to the same excluded-seller pool but its OWN property Source is
-                // NOT Channel Partner — proves the split reads the property's field, not an
-                // assumption that every property in this pool is CP-sourced.
-                {
-                    sellerId: 'CP3',
-                    acqStatus: 'Valuation Completed',
-                    visitDate: '2026-07-15',
-                    mouSigningDate: null,
-                    createdAt: '2026-07-10T09:00:00+05:30',
-                    minGuarantee: 0,
-                    source: 'Meta',
-                    valuationRequestDate: null,
-                    pricingCompletionDate: null,
-                    offerDate: null,
-                },
-            ],
-            channelPartnerPlaces: {
-                CP2: { micromarkets: ['Powai'], clusters: [] },
-                CP3: { micromarkets: ['Powai'], clusters: [] },
-            },
-        }
-        const withCp = deriveReport(cpFacts, opts)
-        const week = withCp.propertyVisitsByDirectCp.find((p) => (p.leadIds['Channel Partner'] ?? []).includes('CP2'))
-        expect(week).toBeDefined()
-        expect(week!.counts['Channel Partner']).toBe(1)
-        expect((week!.leadIds['Direct'] ?? []).includes('CP3')).toBe(true) // CP3's own Source is Meta -> Direct
-
-        // A Micromarket filter that excludes it (CP2/CP3 have no Glasgow) drops both.
-        const excludingFilter = deriveReport(cpFacts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Glasgow'] },
-        })
-        const stillThere = excludingFilter.propertyVisitsByDirectCp.some(
-            (p) => (p.leadIds['Channel Partner'] ?? []).includes('CP2') || (p.leadIds['Direct'] ?? []).includes('CP3')
-        )
-        expect(stillThere).toBe(false)
-    })
-
-    it('keeps "Total Conversions (Channel Partner + Direct)" unaffected by the Channel filter, but responsive to Micromarket', () => {
-        // S1 (New) and S4 (Old) are both Meta/Paid Ads, Powai. Per an explicit growth-team
-        // request 2026-09-24 ("overall conversions... should only change basis the micromarket
-        // filter and time filter if changed"), picking a DIFFERENT channel must not drop them —
-        // this float used to reuse actuals.conversionsNew/conversionsOld, which DOES gate on
-        // channel/source, and a Channel filter measurably moved it before this fix.
-        const channelFiltered = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, channels: ['3P'] },
-        })
-        expect(channelFiltered.overallFunnel.directConversionsTotal).toBe(2) // unchanged: S1 + S4
-
-        // A Micromarket filter that excludes Powai DOES still drop them — the float is
-        // place-and-time-only, not channel-blind-and-place-blind.
-        const mmExcluded = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Glasgow'] },
-        })
-        expect(mmExcluded.overallFunnel.directConversionsTotal).toBe(0)
     })
 
     it('caps the QTD Spend/cost rows at `now`, excluding spend the sheet already has for future dates', () => {
@@ -893,7 +539,7 @@ describe('seller deriveReport golden', () => {
         expect(report.pipelineByCluster).toEqual([{ cluster: 'PAV', counts: { Powai: 1 }, leadIds: { Powai: ['S6'] } }])
     })
 
-    it('nests a second cluster correctly, and falls back to "Unmapped" for a seller with no micromarket', () => {
+    it('nests a second cluster correctly, and falls back to "Unknown" for a seller with no micromarket', () => {
         const glamSeller = seller({ id: 'SP1', createdAt: ISO(7, 20), rawSource: 'Meta', micromarkets: ['Amsterdam'] })
         const unknownSeller = seller({ id: 'SP2', createdAt: ISO(7, 20), rawSource: 'Meta', micromarkets: [] })
         const glamProduct: SellerProductFact = {
@@ -902,11 +548,6 @@ describe('seller deriveReport golden', () => {
             visitDate: null,
             mouSigningDate: null,
             createdAt: '2026-07-20T09:00:00+05:30',
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
         }
         const unknownProduct: SellerProductFact = {
             sellerId: 'SP2',
@@ -914,11 +555,6 @@ describe('seller deriveReport golden', () => {
             visitDate: null,
             mouSigningDate: null,
             createdAt: '2026-07-20T09:00:00+05:30',
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
         }
         const withExtra = deriveReport(
             {
@@ -931,7 +567,7 @@ describe('seller deriveReport golden', () => {
         const byCluster = new Map(withExtra.pipelineByCluster.map((p) => [p.cluster, p]))
         expect(byCluster.get('PAV')?.leadIds.Powai).toContain('S6')
         expect(byCluster.get('GLAM')?.counts.Amsterdam).toBe(1)
-        expect(byCluster.get('Unmapped')?.leadIds.Unmapped).toContain('SP2')
+        expect(byCluster.get('Unknown')?.leadIds.Unknown).toContain('SP2')
     })
 
     it('ignores the time filter entirely for Visits in Pipeline by Cluster (a live snapshot)', () => {
@@ -945,242 +581,6 @@ describe('seller deriveReport golden', () => {
         // S6's pipeline property is created in July, nowhere near this January window — a
         // time-filtered chart would show nothing, but this one still shows S6.
         expect(farFuture.pipelineByCluster.flatMap((p) => Object.values(p.leadIds).flat())).toContain('S6')
-    })
-
-    it('buckets a live junk micromarket value (e.g. "Outside MM") as "Unmapped" instead of its own stray bar, and lets the filter select it', () => {
-        // Added 2026-09-24 per an explicit growth-team request ("add unmapped for all non
-        // mapped micromarkets - Outside mm, Unrecognized yet and add that in the filter").
-        const junkSeller = seller({ id: 'SJUNK', createdAt: ISO(7, 20), rawSource: 'Meta', micromarkets: ['Outside MM'] })
-        const junkProduct: SellerProductFact = {
-            sellerId: 'SJUNK',
-            acqStatus: 'Visit to be Scheduled',
-            visitDate: null,
-            mouSigningDate: null,
-            createdAt: '2026-07-20T09:00:00+05:30',
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const junkFacts = { ...facts, sellers: [...sellers, junkSeller], products: [...products, junkProduct] }
-        const withJunk = deriveReport(junkFacts, opts)
-        const unmappedPoint = withJunk.pipelineByMicromarket.new.find((p) => p.cluster === 'Unmapped')
-        expect(unmappedPoint?.leadIds['Visit to be Scheduled']).toContain('SJUNK')
-        // No stray "Outside MM" bar of its own.
-        expect(withJunk.pipelineByMicromarket.new.some((p) => p.cluster === 'Outside MM')).toBe(false)
-
-        // The 'Unmapped' filter value selects it; a canonical micromarket filter does not.
-        const unmappedFilter = deriveReport(junkFacts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Unmapped'] } })
-        expect(unmappedFilter.sellersById['SJUNK']).toBeDefined()
-        const powaiFilter = deriveReport(junkFacts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Powai'] } })
-        expect(powaiFilter.sellersById['SJUNK']).toBeUndefined()
-    })
-
-    it('windows Pre-Visit Pipeline by Micromarket on lead creation date (unlike the Cluster chart above), keeping the forever reading on TillDate', () => {
-        // Same far-future window as the Cluster test above, but here — added 2026-09-24 per an
-        // explicit growth-team request — Window mode must EXCLUDE S6 (created in July, outside
-        // this January window) entirely, while TillDate (New + Old together = "forever", no time
-        // gate at all) still shows it.
-        const farFuture = deriveReport(facts, {
-            ...opts,
-            filters: {
-                ...EMPTY_SELLER_FILTERS,
-                periods: [{ start: '2026-01-01T00:00:00+05:30', end: '2026-01-08T00:00:00+05:30' }],
-            },
-        })
-        const flatIds = (points: typeof farFuture.pipelineByMicromarket.new) => points.flatMap((p) => Object.values(p.leadIds).flat())
-        expect([...flatIds(farFuture.pipelineByMicromarket.new), ...flatIds(farFuture.pipelineByMicromarket.old)]).not.toContain('S6')
-        expect([...flatIds(farFuture.pipelineByMicromarketTillDate.new), ...flatIds(farFuture.pipelineByMicromarketTillDate.old)]).toContain(
-            'S6'
-        )
-        // Window's Old half is always structurally empty — see CohortSplitPipeline's doc comment.
-        expect(farFuture.pipelineByMicromarket.old).toEqual([])
-    })
-
-    it('windows Acq Pipeline by Micromarket on lead creation date, keeping the forever reading on TillDate (New/Old is now a chart-local scope, not filters.visitScope)', () => {
-        // S4/S8/S9/S10 are all Old-cohort (created before the quarter) sellers with an
-        // ACQ_VISITED_STATUSES property in Powai — Window mode must drop every one of them
-        // (Window shows New only), while TillDate's New+Old together keep them exactly as the
-        // pre-2026-09-24 acqPipelineByMicromarket used to show unconditionally.
-        const idsIn = (split: typeof report.acqPipelineByMicromarket) =>
-            [...split.new, ...split.old].filter((p) => p.cluster === 'Powai').flatMap((p) => Object.values(p.leadIds).flat())
-        const windowedIds = idsIn(report.acqPipelineByMicromarket)
-        const tillDateIds = idsIn(report.acqPipelineByMicromarketTillDate)
-        for (const oldSellerId of ['S4', 'S8', 'S9', 'S10']) {
-            expect(windowedIds).not.toContain(oldSellerId)
-            expect(tillDateIds).toContain(oldSellerId)
-        }
-        // S1 (New cohort) still shows up in both.
-        expect(windowedIds).toContain('S1')
-        expect(tillDateIds).toContain('S1')
-        expect(report.acqPipelineByMicromarket.old).toEqual([])
-    })
-
-    it("puts a lead created AFTER a narrowed window into TillDate's Old bucket too, not just leads created before it", () => {
-        // Old is "everything not New", never "created before the window" — otherwise Till Date
-        // (which promises "forever, no time gate at all") would silently drop a lead created
-        // AFTER whatever narrower period happens to be selected, e.g. an August-created lead
-        // while viewing a July-only window. SAUG proves that case specifically.
-        const augSeller = seller({ id: 'SAUG', createdAt: ISO(8, 10), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const augProduct: SellerProductFact = {
-            sellerId: 'SAUG',
-            acqStatus: 'Visit Scheduled',
-            visitDate: null,
-            mouSigningDate: null,
-            createdAt: augSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const julyOnly = deriveReport(
-            { ...facts, sellers: [...sellers, augSeller], products: [...products, augProduct] },
-            {
-                ...opts,
-                filters: {
-                    ...EMPTY_SELLER_FILTERS,
-                    periods: [{ start: '2026-07-01T00:00:00+05:30', end: '2026-08-01T00:00:00+05:30' }],
-                },
-            }
-        )
-        const windowIds = julyOnly.pipelineByMicromarket.new.flatMap((p) => Object.values(p.leadIds).flat())
-        const tillDateOldIds = julyOnly.pipelineByMicromarketTillDate.old.flatMap((p) => Object.values(p.leadIds).flat())
-        expect(windowIds).not.toContain('SAUG')
-        expect(tillDateOldIds).toContain('SAUG')
-    })
-
-    it('gives Properties with Stalled Conversions the same Window/Till Date + New/Old treatment as the other two Micromarket pipeline charts', () => {
-        // SOLD is an Old-cohort seller (created before the quarter) with a stalled-conversion
-        // status and a Visit_Date — added 2026-09-24 per an explicit growth-team request
-        // ("Properties with stalled conversions should have the same logic").
-        const oldSeller = seller({ id: 'SOLD', createdAt: ISO(6, 1), rawSource: 'Meta', micromarkets: ['Powai'], inPopulation: false })
-        const oldProduct: SellerProductFact = {
-            sellerId: 'SOLD',
-            acqStatus: 'Valuation Completed',
-            visitDate: '2026-07-20',
-            mouSigningDate: null,
-            createdAt: oldSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const withExtra = deriveReport({ ...facts, sellers: [...sellers, oldSeller], products: [...products, oldProduct] }, opts)
-        const windowIds = withExtra.stalledConversionsByMicromarket.new.flatMap((p) => Object.values(p.leadIds).flat())
-        const tillDateOldIds = withExtra.stalledConversionsByMicromarketTillDate.old.flatMap((p) => Object.values(p.leadIds).flat())
-        expect(windowIds).not.toContain('SOLD')
-        expect(tillDateOldIds).toContain('SOLD')
-        expect(withExtra.stalledConversionsByMicromarket.old).toEqual([])
-    })
-
-    it("counts Post Visit TAT stages cumulatively by each stage's own transition date, not by the property's CURRENT Acq_Status", () => {
-        // STAT1's current Acq_Status is 'Offer Made to Seller', but it also carries populated
-        // Visit_Date / Valuation_Request_date / Pricing_completion_date fields from having passed
-        // through every earlier stage on its way there — all four stages should count it, not
-        // just the current one (rebuilt 2026-09-24, per an explicit growth-team request).
-        const statSeller = seller({ id: 'STAT1', createdAt: ISO(7, 25), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const statProduct: SellerProductFact = {
-            sellerId: 'STAT1',
-            acqStatus: 'Offer Made to Seller',
-            visitDate: '2026-07-28',
-            mouSigningDate: null,
-            createdAt: statSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: '2026-08-02', // +5 days vs Visit_Date
-            pricingCompletionDate: '2026-08-10', // +8 days vs Valuation_Request_date
-            offerDate: '2026-08-15', // +5 days vs Pricing_completion_date
-        }
-        const withExtra = deriveReport({ ...facts, sellers: [...sellers, statSeller], products: [...products, statProduct] }, opts)
-        const stage = (name: string) => withExtra.postVisitTat.stages.find((s) => s.stage === name)!
-        expect(stage('Visit Completed').leadIdsNew).toContain('STAT1')
-        expect(stage('Sent for Valuation').countNew).toBe(1)
-        expect(stage('Sent for Valuation').leadIdsNew).toContain('STAT1')
-        expect(stage('Valuation Completed').countNew).toBe(1)
-        expect(stage('Offer Made to Seller').countNew).toBe(1)
-
-        const transition = (from: string, to: string) => withExtra.postVisitTat.transitions.find((t) => t.from === from && t.to === to)!
-        const avgNew = (t: { sumDaysNew: number; pairsNew: number }) => t.sumDaysNew / t.pairsNew
-        expect(avgNew(transition('Visit Completed', 'Sent for Valuation'))).toBe(5)
-        expect(avgNew(transition('Sent for Valuation', 'Valuation Completed'))).toBe(8)
-        expect(avgNew(transition('Valuation Completed', 'Offer Made to Seller'))).toBe(5)
-    })
-
-    it("matches Post Visit TAT's Visit Completed count to the funnel/table's own Property Visits count exactly", () => {
-        // Per an explicit growth-team request 2026-09-25 ("match the post visit TAT chart visit
-        // completed count with the property visit count in the funnel and the table"): base
-        // fixture already proves this by construction (countNew 4 / countOld 1 == New/Old
-        // Property Visits' own qAchieved), but this test isolates the two specific cases that
-        // used to make them disagree.
-        const stage = (r: typeof report) => r.postVisitTat.stages.find((s) => s.stage === 'Visit Completed')!
-
-        // Base fixture: 'Visit Completed' now reads the same qualifying-visit population as
-        // New/Old Property Visits (S1 x2 + S3 x2 New, S4 x1 Old) — not the old "any Visit_Date
-        // in window regardless of Acq_Status" reading.
-        const visitCompleted = stage(report)
-        const newPropertyVisits = report.targetVsAchieved.find((r) => r.metric === 'New Property Visits')!.qAchieved
-        const oldPropertyVisits = report.targetVsAchieved.find((r) => r.metric === 'Old Property Visits')!.qAchieved
-        expect(visitCompleted.countNew).toBe(newPropertyVisits)
-        expect(visitCompleted.countOld).toBe(oldPropertyVisits)
-
-        // A genuine Case-1 "never" property (Junk) with a stray Visit_Date populated must NOT
-        // count, even though the old date-presence-only check would have counted it.
-        const junkSeller = seller({ id: 'SJUNKVISIT', createdAt: ISO(7, 20), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const junkProduct: SellerProductFact = {
-            sellerId: 'SJUNKVISIT',
-            acqStatus: 'Junk',
-            visitDate: '2026-07-25',
-            mouSigningDate: null,
-            createdAt: junkSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const withJunk = deriveReport({ ...facts, sellers: [...sellers, junkSeller], products: [...products, junkProduct] }, opts)
-        expect(stage(withJunk).leadIdsNew).not.toContain('SJUNKVISIT')
-
-        // A Case-3 property with NO Visit_Date "always" qualifies (mirroring the funnel/table
-        // exactly) — must count here even without a date, which the old check would have missed.
-        const noDateSeller = seller({ id: 'SNODATE', createdAt: ISO(7, 20), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const noDateProduct: SellerProductFact = {
-            sellerId: 'SNODATE',
-            acqStatus: 'Deal Lost', // Case 3, always counts
-            visitDate: null,
-            mouSigningDate: null,
-            createdAt: noDateSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: null,
-        }
-        const withNoDate = deriveReport({ ...facts, sellers: [...sellers, noDateSeller], products: [...products, noDateProduct] }, opts)
-        expect(stage(withNoDate).leadIdsNew).toContain('SNODATE')
-    })
-
-    it('excludes a Post Visit TAT stage date that falls outside the funnel window', () => {
-        const statSeller = seller({ id: 'STATOLD', createdAt: ISO(7, 25), rawSource: 'Meta', micromarkets: ['Powai'] })
-        const statProduct: SellerProductFact = {
-            sellerId: 'STATOLD',
-            acqStatus: 'Offer Made to Seller',
-            visitDate: null,
-            mouSigningDate: null,
-            createdAt: statSeller.createdAt,
-            minGuarantee: 0,
-            source: '',
-            valuationRequestDate: null,
-            pricingCompletionDate: null,
-            offerDate: '2026-04-01', // before the quarter (starts 2026-07-05) — must not count
-        }
-        const withExtra = deriveReport({ ...facts, sellers: [...sellers, statSeller], products: [...products, statProduct] }, opts)
-        const offerStage = withExtra.postVisitTat.stages.find((s) => s.stage === 'Offer Made to Seller')!
-        expect(offerStage.leadIdsNew).not.toContain('STATOLD')
-        expect(offerStage.leadIdsOld).not.toContain('STATOLD')
     })
 
     // === Micromarket Analysis ===
@@ -1204,28 +604,29 @@ describe('seller deriveReport golden', () => {
         expect(totalBoth).toBe(rowBoth.qAchieved)
     })
 
-    it('gives every micromarket a target — HABIBI members map to the combined Bangalore row', () => {
-        // The HABIBI micromarkets (Helsinki, Berlin, Hong Kong, Ibiza) have no row of their own
-        // in the target sheet — only a combined 'Bangalore' one for the whole cluster. Confirmed
-        // with the user 2026-09-24: picked alone (not just as a whole-cluster tick), each one
-        // now maps to that combined Bangalore figure — the same "map to the nearest thing that
-        // DOES have a cell" principle as a raw Source mapping to its parent Channel. Every
-        // micromarket therefore gets a real, non-null target.
-        // 'Bangalore' itself is a target-grid-only proxy name — no seller ever carries it as a
-        // real Truva_Micromarket, so it never appears as its own row in this chart. Each HABIBI
-        // member instead reads the SAME combined figure directly (all four must agree).
-        const habibi = ['Helsinki', 'Berlin', 'Hong Kong', 'Ibiza']
-        for (const field of ['qualifiedLeadsByMicromarketQuarter', 'qualifiedVisitsByMicromarketQuarter'] as const) {
-            const points = report[field]
-            for (const p of points) expect(p.target).not.toBeNull()
-            const habibiTargets = habibi.map((mm) => points.find((p) => p.micromarket === mm)!.target)
-            expect(new Set(habibiTargets).size).toBe(1)
+    it('gives every grid-covered micromarket a target', () => {
+        // The HABIBI micromarkets have no row of their own in the target sheet — only a
+        // combined 'Bangalore' one for the whole cluster — so a lookup for any of them
+        // individually is honestly uncovered (null), not a fabricated split. Every other
+        // in-scope micromarket does get a real target.
+        //
+        // Ibiza joined HABIBI on 2026-09-16 and is uncovered for the same reason, plus a
+        // second one: the growth team has not set targets for it yet. When they do, it gets a
+        // grid row and comes out of this set.
+        const uncovered = new Set(['Helsinki', 'Berlin', 'Hong Kong', 'Ibiza'])
+        for (const p of report.qualifiedLeadsByMicromarketQuarter) {
+            if (uncovered.has(p.micromarket)) expect(p.target).toBeNull()
+            else expect(p.target).not.toBeNull()
+        }
+        for (const p of report.qualifiedVisitsByMicromarketQuarter) {
+            if (uncovered.has(p.micromarket)) expect(p.target).toBeNull()
+            else expect(p.target).not.toBeNull()
         }
     })
 
-    it('gives Powai the exact absolute quarter target from the grid (125 Qualified Leads), not a pro-rated share', () => {
+    it('gives Powai the exact absolute quarter target from the grid (123 Qualified Leads), not a pro-rated share', () => {
         const powaiLeads = report.qualifiedLeadsByMicromarketQuarter.find((p) => p.micromarket === 'Powai')!
-        expect(powaiLeads.target).toBe(125)
+        expect(powaiLeads.target).toBe(123)
     })
 
     it("does not shrink a micromarket's target for a narrower time filter or for pace — Micromarket Analysis is always the FULL quarter, unlike the Target vs Achieved table's own paced QTD column", () => {
@@ -1239,7 +640,7 @@ describe('seller deriveReport golden', () => {
         const fullQuarterTarget = report.qualifiedLeadsByMicromarketQuarter.find((p) => p.micromarket === 'Powai')!.target
         const oneMonthTarget = oneMonth.qualifiedLeadsByMicromarketQuarter.find((p) => p.micromarket === 'Powai')!.target
         expect(oneMonthTarget).toBe(fullQuarterTarget)
-        expect(oneMonthTarget).toBe(125)
+        expect(oneMonthTarget).toBe(123)
     })
 
     it("resolves a whole HABIBI cluster pick (Helsinki + Berlin + Hong Kong together) to the grid's combined Bangalore row", () => {
@@ -1250,116 +651,6 @@ describe('seller deriveReport golden', () => {
         const leadsTarget = habibiOnly.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTarget
         expect(leadsTarget).not.toBeNull()
         expect(leadsTarget).toBeGreaterThan(0)
-    })
-
-    it('also resolves a LONE HABIBI micromarket (no whole-cluster pick) to the same combined Bangalore row', () => {
-        const helsinkiAlone = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Helsinki'] },
-        })
-        const habibiTogether = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, micromarkets: ['Helsinki', 'Berlin', 'Hong Kong'] },
-        })
-        const helsinkiTarget = helsinkiAlone.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTarget
-        const togetherTarget = habibiTogether.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTarget
-        expect(helsinkiTarget).not.toBeNull()
-        expect(helsinkiTarget).toBe(togetherTarget)
-    })
-
-    it("maps a lone raw Source (no parent Channel ticked) to that source's own Channel target", () => {
-        // 'society data - cold call' (Cold Outreach's own raw source) has no cell of its own in
-        // the grid — only per-Channel granularity exists — so it must read the SAME target as
-        // picking the whole Cold Outreach channel, not the unfiltered Overall total. Confirmed
-        // with the user 2026-09-24 after they caught this defaulting to Overall silently.
-        const sourceOnly = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, sources: ['society data - cold call'] },
-        })
-        const channelOnly = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, channels: ['Cold Outreach'] },
-        })
-        const overallUnfiltered = deriveReport(facts, opts)
-        const sourceTarget = sourceOnly.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTargetFull
-        const channelTarget = channelOnly.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTargetFull
-        const overallTarget = overallUnfiltered.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTargetFull
-        expect(sourceTarget).toBe(channelTarget)
-        expect(sourceTarget).not.toBe(overallTarget)
-    })
-
-    it("reads a channel's own 'All clusters' sheet row PLUS its own Bangalore row for a whole-Channel pick, the same for a lone-Source fallback", () => {
-        // Rebuilt 2026-09-24 per an explicit growth-team report ("jas targets not matching for
-        // channels... Unattributed has been skipped. Only use all clusters targets"): a whole
-        // "Paid Ads" pick (no Cluster/MM filter) reads the sheet's own "Paid | All clusters |
-        // JAS" row directly, rather than reconstructing it from the 9 grid micromarkets plus a
-        // separately-maintained "Unattributed" constant. Corrected again 2026-09-25, per the
-        // user ("offline branding is 140, was supposed to be 193 with blr"): that row alone
-        // isn't the whole story either — a whole-Channel pick's achieved figures always include
-        // that channel's own Bangalore sellers too (no micromarket filter means every
-        // micromarket), so 1,452 (Paid Ads' own "All clusters" row) + 48 (its own Bangalore row)
-        // = 1,500 is the real target, mirroring ALL_CLUSTERS_TOTAL's own "All clusters +
-        // Bangalore" combination for Overall. A lone raw Source under Paid Ads (e.g. "Meta")
-        // reads the exact same 1,500 target — there's nothing left to selectively fold in once
-        // both rows are read verbatim and combined the same way regardless of how `channels` was
-        // derived.
-        const channelOnly = deriveReport(facts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, channels: ['Paid Ads'] } })
-        const sourceOnly = deriveReport(facts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, sources: ['meta'] } })
-        const channelTarget = channelOnly.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTargetFull
-        const sourceTarget = sourceOnly.targetVsAchieved.find((r) => r.metric === 'Total Leads')!.qTargetFull
-        expect(channelTarget).toBe(1500)
-        expect(sourceTarget).toBe(1500)
-    })
-
-    it("locks every channel's own 'All clusters' + Bangalore JAS target, re-verified 2026-09-25 against the sheet directly", () => {
-        // Channel = <name>, Micromarket = 'All clusters', Quarter = 'JAS' on the "MM-WISE View
-        // (Seller)" tab, PLUS that same channel's own Micromarket = 'Bangalore' row (from ROWS) —
-        // read cell-by-cell, not reconstructed from the 9 named-micromarket rows.
-        const expected: Record<string, { leads: number; ql: number; totalVisits: number; totalConv: number; spendInr: number }> = {
-            'Paid Ads': { leads: 1500, ql: 65, totalVisits: 50, totalConv: 4, spendInr: 621370 },
-            '3P': { leads: 407, ql: 126, totalVisits: 50, totalConv: 2, spendInr: 57305 },
-            'Offline Branding': { leads: 192, ql: 118, totalVisits: 59, totalConv: 7, spendInr: 1535000 },
-            'Referral & WOM': { leads: 82, ql: 50, totalVisits: 30, totalConv: 6, spendInr: 720000 },
-            Organic: { leads: 1421, ql: 128, totalVisits: 71, totalConv: 5, spendInr: 0 },
-            'Society WA Groups & Management Apps': { leads: 48, ql: 33, totalVisits: 22, totalConv: 2, spendInr: 0 },
-            'Cold Outreach': { leads: 1072, ql: 181, totalVisits: 98, totalConv: 10, spendInr: 351700 },
-        }
-        for (const [channel, want] of Object.entries(expected)) {
-            const withChannel = deriveReport(facts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, channels: [channel] } })
-            const row = (metric: string) => withChannel.targetVsAchieved.find((r) => r.metric === metric)!.qTargetFull
-            expect(row('Total Leads')).toBe(want.leads)
-            expect(row('Total Qualified Seller Leads')).toBe(want.ql)
-            expect(row('Unique Seller Total Visits')).toBe(want.totalVisits)
-            expect(row('Total Property Conversions')).toBe(want.totalConv)
-            expect(row('Spend')).toBe(want.spendInr)
-        }
-    })
-
-    it('reads the same unfiltered target whether the Cluster/MM filter is empty or every micromarket is explicitly ticked', () => {
-        // "How is the 4723 when every cluster is deselected and 2411 when all clusters and
-        // unmapped are selected. should be the same" — ticking every checkbox in the picker
-        // must read identically to ticking none of them; it previously fell through to summing
-        // the 9 named-micromarket cells (2,411) instead of the shortcut (4,723), because nothing
-        // detected that the "narrowed" selection actually covered the whole grid.
-        const noFilter = deriveReport(facts, opts)
-        const everyMicromarketTicked = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, micromarkets: [...SELLER_MICROMARKETS, 'Unmapped'] },
-        })
-        const leadsTarget = (r: typeof noFilter) => r.targetVsAchieved.find((row) => row.metric === 'Total Leads')!.qTargetFull
-        expect(leadsTarget(everyMicromarketTicked)).toBe(leadsTarget(noFilter))
-        expect(leadsTarget(noFilter)).toBe(4723)
-
-        // Same invariant for a whole-Channel pick — "all clusters" ticked alongside a Channel
-        // must read the same as that Channel alone (1,500 for Paid Ads: its own "All clusters"
-        // row plus its own Bangalore row, not the 9-cell sum).
-        const channelOnly = deriveReport(facts, { ...opts, filters: { ...EMPTY_SELLER_FILTERS, channels: ['Paid Ads'] } })
-        const channelWithEveryMicromarket = deriveReport(facts, {
-            ...opts,
-            filters: { ...EMPTY_SELLER_FILTERS, channels: ['Paid Ads'], micromarkets: [...SELLER_MICROMARKETS] },
-        })
-        expect(leadsTarget(channelWithEveryMicromarket)).toBe(leadsTarget(channelOnly))
-        expect(leadsTarget(channelOnly)).toBe(1500)
     })
 
     it('shows only the selected micromarkets, in canonical order, when the Cluster/MM filter narrows the selection', () => {

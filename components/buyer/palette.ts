@@ -1,15 +1,15 @@
 import { SOURCES_BY_CHANNEL } from '@/lib/buyer/types'
 
 export const SERIES_COLORS = [
-    '#3a7d5d',
-    '#cf9d5b',
-    '#8ba0b4',
-    '#c7533e',
-    '#7c5cbf',
-    '#5ba88a',
-    '#e5a040',
-    '#4a90d9',
-    '#a9a294',
+    '#2563EB',
+    '#DC2626',
+    '#16A34A',
+    '#8B5CF6',
+    '#F59E0B',
+    '#14B8A6',
+    '#DB2777',
+    '#EA580C',
+    '#6B7280',
 ]
 
 // Per-channel hue families for the by-source charts. Showing the real source name means
@@ -19,13 +19,13 @@ export const SERIES_COLORS = [
 // naming the actual source. Shades run dark to light in the same order as
 // SOURCES_BY_CHANNEL, i.e. biggest source darkest.
 const CHANNEL_RAMPS: Record<string, string[]> = {
-    'Paid Ads': ['#2f6349', '#3a7d5d', '#5ba88a', '#8ec9ad'],
-    '3P': ['#a8402e', '#c7533e', '#e08670'],
-    Organic: ['#2f6ea8', '#4a90d9', '#7bb2e8', '#a9cef2'],
-    'Offline Branding': ['#8ba0b4'],
-    'Society WA Groups & Management Apps': ['#6544a6', '#7c5cbf', '#a98fd8'],
-    'Referral & WOM': ['#b5822f', '#e5a040'],
-    Unmapped: ['#a9a294'],
+    'Paid Ads': ['#0F7B3E', '#16A34A', '#4ADE80', '#86EFAC'],
+    '3P': ['#B91C1C', '#DC2626', '#F87171'],
+    Organic: ['#1D4ED8', '#2563EB', '#60A5FA', '#BFDBFE'],
+    'Offline Branding': ['#64748B'],
+    'Society WA Groups & Management Apps': ['#6D28D9', '#8B5CF6', '#C4B5FD'],
+    'Referral & WOM': ['#B45309', '#F59E0B'],
+    Unmapped: ['#9CA3AF'],
 }
 
 const SOURCE_COLOR = new Map<string, string>()
@@ -40,12 +40,12 @@ for (const [channel, sources] of Object.entries(SOURCES_BY_CHANNEL)) {
 // Duplicate is admin noise, left neutral. Shades within a family run dark → light in
 // STATUS_ORDER order.
 const STATUS_RAMPS = {
-    blue: ['#2f6ea8', '#4a90d9', '#7bb2e8'],
-    // Capped at a mid green (~#7cbf9d) rather than running to near-white — the palest shades
-    // were unreadable as bar slivers on the cream background.
-    green: ['#204a37', '#26543d', '#2f6349', '#39785a', '#458f6c', '#54a07d', '#65b08f', '#7cbf9d'],
-    red: ['#8f3729', '#c7533e', '#e0806f'],
-    neutral: ['#a9a294'],
+    blue: ['#1D4ED8', '#2563EB', '#60A5FA'],
+    // Capped at a mid green rather than running to near-white — the palest shades were
+    // unreadable as bar slivers on the (now white) card background.
+    green: ['#0B5A2E', '#0F7B3E', '#16A34A', '#22B559', '#4ADE80', '#6EE7A0', '#86EFAC', '#A7F3C3'],
+    red: ['#8F1D1D', '#B91C1C', '#F87171'],
+    neutral: ['#9CA3AF'],
 } as const
 
 // [family, statuses] — also the stack/legend order (blue → green → red → neutral). Purchased

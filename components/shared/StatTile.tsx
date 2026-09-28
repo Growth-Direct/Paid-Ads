@@ -5,31 +5,28 @@ interface TileProps {
     value: React.ReactNode
     sub?: React.ReactNode
     onClick?: () => void
-    /** Hover text for context that qualifies the number but should not crowd the tile. */
-    hint?: string
 }
 
-export function StatTile({ label, value, sub, onClick, hint }: TileProps) {
+export function StatTile({ label, value, sub, onClick }: TileProps) {
     return (
         <div
-            title={hint}
             onClick={onClick}
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 14,
                 padding: '20px 22px',
                 cursor: onClick ? 'pointer' : 'default',
             }}
             onMouseEnter={(e) => {
                 if (onClick) {
-                    e.currentTarget.style.background = '#f6f2ea'
-                    e.currentTarget.style.borderColor = '#d8d1c4'
+                    e.currentTarget.style.background = '#F5F5F5'
+                    e.currentTarget.style.borderColor = '#999999'
                 }
             }}
             onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#fbf9f4'
-                e.currentTarget.style.borderColor = '#e9e4db'
+                e.currentTarget.style.background = '#FFFFFF'
+                e.currentTarget.style.borderColor = '#CCCCCC'
             }}>
             <div
                 style={{
@@ -37,14 +34,14 @@ export function StatTile({ label, value, sub, onClick, hint }: TileProps) {
                     fontSize: 11,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: '#9a948a',
+                    color: '#333333',
                     marginBottom: 16,
                     height: 11,
                     display: 'flex',
                     justifyContent: 'space-between',
                 }}>
                 {label}
-                {onClick && <span style={{ color: '#bdb6aa', letterSpacing: 0 }}>›</span>}
+                {onClick && <span style={{ color: '#666666', letterSpacing: 0 }}>›</span>}
             </div>
             <div
                 style={{
@@ -57,7 +54,7 @@ export function StatTile({ label, value, sub, onClick, hint }: TileProps) {
                     gap: 6,
                 }}>
                 {value}
-                {sub && <span style={{ fontSize: 15, fontWeight: 500, color: '#9a948a' }}>{sub}</span>}
+                {sub && <span style={{ fontSize: 15, fontWeight: 500, color: '#333333' }}>{sub}</span>}
             </div>
         </div>
     )

@@ -33,7 +33,7 @@ interface Props {
 function SubReasonRows({ label, subReasons, parentTotal }: { label: string; subReasons: ReasonPoint[]; parentTotal: number }) {
     return (
         <>
-            <div style={{ fontWeight: 700, color: '#3a3630', fontSize: 9.5, marginBottom: 2 }}>{label}</div>
+            <div style={{ fontWeight: 700, color: '#000000', fontSize: 9.5, marginBottom: 2 }}>{label}</div>
             {subReasons.map((r) => {
                 const pct = parentTotal > 0 ? ((r.count / parentTotal) * 100).toFixed(1) : '0.0'
                 return (
@@ -55,13 +55,13 @@ function FullSplitTooltip({ data, total, activeReason }: { data: ReasonPoint[]; 
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 8,
                 padding: '8px 10px',
                 fontSize: 12,
                 fontFamily: "'IBM Plex Mono', monospace",
-                color: '#3a3630',
+                color: '#000000',
                 minWidth: 200,
             }}>
             {data.map((p) => {
@@ -75,7 +75,7 @@ function FullSplitTooltip({ data, total, activeReason }: { data: ReasonPoint[]; 
                             justifyContent: 'space-between',
                             gap: 16,
                             fontWeight: active ? 700 : 400,
-                            color: active ? '#3a3630' : '#9a948a',
+                            color: active ? '#000000' : '#333333',
                         }}>
                         <span>{p.reason}</span>
                         <span>
@@ -160,8 +160,8 @@ export default function NotQualifiedPie({
                     <Tooltip
                         content={tooltipContent}
                         contentStyle={{
-                            background: '#fbf9f4',
-                            border: '1px solid #e9e4db',
+                            background: '#FFFFFF',
+                            border: '1px solid #CCCCCC',
                             borderRadius: 8,
                             fontSize: 12,
                             fontFamily: "'IBM Plex Mono', monospace",
@@ -178,7 +178,7 @@ export default function NotQualifiedPie({
                             aria-hidden>
                             <defs>
                                 <marker id="subReasonArrowhead" markerWidth={6} markerHeight={6} refX={4} refY={2} orient="auto">
-                                    <path d="M0,0 L4,2 L0,4 Z" fill="#9a948a" />
+                                    <path d="M0,0 L4,2 L0,4 Z" fill="#333333" />
                                 </marker>
                             </defs>
                             <line
@@ -186,7 +186,7 @@ export default function NotQualifiedPie({
                                 y1={arrow.y1}
                                 x2={arrow.x2}
                                 y2={arrow.y2}
-                                stroke="#9a948a"
+                                stroke="#333333"
                                 strokeWidth={1}
                                 strokeDasharray="3 3"
                                 markerEnd="url(#subReasonArrowhead)"
@@ -200,13 +200,13 @@ export default function NotQualifiedPie({
                             top: 4,
                             right: 4,
                             maxWidth: 160,
-                            background: '#fbf9f4',
-                            border: '1px dashed #c9c2b4',
+                            background: '#FFFFFF',
+                            border: '1px dashed #CCCCCC',
                             borderRadius: 8,
                             padding: '5px 8px',
                             fontSize: 10,
                             fontFamily: "'IBM Plex Mono', monospace",
-                            color: '#6b655c',
+                            color: '#333333',
                             lineHeight: 1.5,
                             // A footnote, not a control — never eats a click meant for the pie
                             // slice underneath (drill-down still works wherever this sits).

@@ -16,8 +16,8 @@ export default function ChartCard({ title, subtitle, height = 280, empty = false
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 14,
                 padding: '20px 22px 16px',
             }}>
@@ -28,11 +28,11 @@ export default function ChartCard({ title, subtitle, height = 280, empty = false
                         fontSize: 11,
                         letterSpacing: '0.1em',
                         textTransform: 'uppercase',
-                        color: '#9a948a',
+                        color: '#333333',
                     }}>
                     {title}
                 </div>
-                {subtitle && <div style={{ fontSize: 12, color: '#b3ada2', marginTop: 4 }}>{subtitle}</div>}
+                {subtitle && <div style={{ fontSize: 12, color: '#666666', marginTop: 4 }}>{subtitle}</div>}
             </div>
             <div style={height === 'auto' ? { minHeight: 120 } : { height }}>
                 {empty ? (
@@ -43,7 +43,7 @@ export default function ChartCard({ title, subtitle, height = 280, empty = false
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#b3ada2',
+                            color: '#666666',
                             fontFamily: "'IBM Plex Mono', monospace",
                             fontSize: 12.5,
                         }}>

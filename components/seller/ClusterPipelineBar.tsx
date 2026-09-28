@@ -34,7 +34,7 @@ function makeTotalLabel(totals: number[]) {
                 textAnchor="start"
                 fontSize={10}
                 fontWeight={700}
-                fill="#3a3630"
+                fill="#000000"
                 fontFamily={MONO}>
                 {total.toLocaleString('en-IN')}
             </text>
@@ -58,8 +58,8 @@ function ShareTooltip({ payload }: Pick<RechartsTooltipProps, 'payload'>) {
     return (
         <div
             style={{
-                background: '#fbf9f4',
-                border: '1px solid #e9e4db',
+                background: '#FFFFFF',
+                border: '1px solid #CCCCCC',
                 borderRadius: 8,
                 fontSize: 12,
                 fontFamily: MONO,
@@ -69,7 +69,7 @@ function ShareTooltip({ payload }: Pick<RechartsTooltipProps, 'payload'>) {
                 gap: 4,
             }}>
             {payload.map((e) => (
-                <div key={String(e.dataKey)} style={{ display: 'flex', justifyContent: 'space-between', gap: 14, color: e.color ?? '#3a3630' }}>
+                <div key={String(e.dataKey)} style={{ display: 'flex', justifyContent: 'space-between', gap: 14, color: e.color ?? '#000000' }}>
                     <span>{e.name}</span>
                     <span>
                         {e.value} ({total > 0 ? (((e.value ?? 0) / total) * 100).toFixed(1) : '0.0'}%)
@@ -89,11 +89,11 @@ export default function ClusterPipelineBar({ data, onSegmentClick }: Props) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <BarChart layout="vertical" data={chartData} margin={{ top: 4, right: 40, bottom: 4, left: 4 }} barSize={20}>
-                <CartesianGrid horizontal={false} stroke="#efe9e0" strokeDasharray="0" />
+                <CartesianGrid horizontal={false} stroke="#F5F5F5" strokeDasharray="0" />
                 <XAxis
                     type="number"
                     allowDecimals={false}
-                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#9a948a' }}
+                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#333333' }}
                     axisLine={false}
                     tickLine={false}
                 />
@@ -101,7 +101,7 @@ export default function ClusterPipelineBar({ data, onSegmentClick }: Props) {
                     type="category"
                     dataKey="cluster"
                     width={72}
-                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#6b655c' }}
+                    tick={{ fontFamily: MONO, fontSize: 10, fill: '#333333' }}
                     axisLine={false}
                     tickLine={false}
                 />

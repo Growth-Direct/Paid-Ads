@@ -1,7 +1,15 @@
 import { assignLeadIdentity, isChannelPartnerSource, phoneKeyOf } from '@/lib/buyer/aggregate'
 import type { LeadFact } from '@/lib/buyer/facts'
 import { EMPTY_FILTERS, leadMatches } from '@/lib/buyer/filters'
-import { EXCLUDED_SOURCES, SOURCE_LABEL, isVirtualMicromarket, mapChannel, sourceLabel, toList } from '@/lib/buyer/shared'
+import {
+    EXCLUDED_SOURCES,
+    SOURCE_LABEL,
+    isEligibleChannel,
+    isVirtualMicromarket,
+    mapChannel,
+    sourceLabel,
+    toList,
+} from '@/lib/buyer/shared'
 import { CHANNELS, SOURCES_BY_CHANNEL, SOURCE_ORDER } from '@/lib/buyer/types'
 import { describe, expect, it } from 'vitest'
 
@@ -43,6 +51,31 @@ describe('excluded sources', () => {
         expect(mapChannel('  SOCIETY PARTNERS ')).toBeNull()
         expect(mapChannel('')).toBe('Unmapped')
         expect(mapChannel(null)).toBe('Unmapped')
+    })
+})
+
+describe('isEligibleChannel — 2026-09-23 Paid Ads/3P-only population narrowing', () => {
+    it('admits Paid Ads and 3P', () => {
+        expect(isEligibleChannel('Paid Ads')).toBe(true)
+        expect(isEligibleChannel('3P')).toBe(true)
+    })
+
+    it('excludes every other real channel', () => {
+        for (const channel of ['Offline Branding', 'Society WA Groups & Management Apps', 'Organic', 'Referral & WOM', 'Unmapped'] as const) {
+            expect(isEligibleChannel(channel)).toBe(false)
+        }
+    })
+
+    it('excludes null (the already-excluded-sources case), same as before this rule existed', () => {
+        expect(isEligibleChannel(null)).toBe(false)
+    })
+
+    it('composes with mapChannel end-to-end on real raw source strings', () => {
+        expect(isEligibleChannel(mapChannel('99acres'))).toBe(true) // 3P
+        expect(isEligibleChannel(mapChannel('Meta'))).toBe(true) // Paid Ads
+        expect(isEligibleChannel(mapChannel('Website'))).toBe(false) // Organic
+        expect(isEligibleChannel(mapChannel('Offline Branding'))).toBe(false)
+        expect(isEligibleChannel(mapChannel('Channel Partner'))).toBe(false) // already-excluded source
     })
 })
 
@@ -134,6 +167,10 @@ function lead(p: Partial<LeadFact> & { status: string; createdAt: string }): Lea
         attributedMicromarket: null,
         attributedAt: null,
         hasAttribution: false,
+        attributedCampaign: '',
+        attributedAdSet: '',
+        attributedAd: '',
+        attributedProperty: '',
     }
 }
 const primaries = (ls: LeadFact[]) => ls.filter((l) => l.isPrimary).map((l) => l.id)

@@ -17,7 +17,7 @@ function lead(id: string, createdAt: string): LeadFact {
         hasWarmBid: false, responseAt: null, utmChannel: null, acefoneLeadId: null, phoneKey: '',
         dedupKey: `id:${id}`, isPrimary: true, inPopulation: true, inPipeline: false,
         attributedSource: '', attributedChannel: null, attributedMicromarket: null, attributedAt: null,
-        hasAttribution: false,
+        hasAttribution: false, attributedCampaign: '', attributedAdSet: '', attributedAd: '', attributedProperty: '',
     }
 }
 
@@ -29,11 +29,13 @@ const facts: BuyerFacts = {
         lead('JUL02', '2026-07-02T10:00:00+05:30'),
     ],
     visits: [], conversions: [], soldBids: [], visitSplit: [], houses: [],
-    lshTouches: [
-        { leadId: 'JUN29', timestamp: '2026-06-29T10:00:00+05:30' },
-        { leadId: 'JUN30', timestamp: '2026-06-30T10:00:00+05:30' },
-        { leadId: 'JUL01', timestamp: '2026-07-01T10:00:00+05:30' },
-    ],
+    lshTouches: (
+        [
+            { leadId: 'JUN29', timestamp: '2026-06-29T10:00:00+05:30' },
+            { leadId: 'JUN30', timestamp: '2026-06-30T10:00:00+05:30' },
+            { leadId: 'JUL01', timestamp: '2026-07-01T10:00:00+05:30' },
+        ] as const
+    ).map((t) => ({ ...t, campaign: '', adSet: '', ad: '', property: '', micromarket: '', leadStatus: '' })),
     spend: [], bidSources: [],
     spendIngest: {
         origin: 'snapshot',

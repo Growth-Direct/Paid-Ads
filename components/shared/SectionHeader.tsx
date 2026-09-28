@@ -10,12 +10,12 @@ export default function SectionHeader({ title }: { title: string }) {
                     fontWeight: 700,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: '#3a3630',
+                    color: '#000000',
                     whiteSpace: 'nowrap',
                 }}>
                 {title}
             </span>
-            <span style={{ flex: 1, height: 1, background: '#e0dad0' }} />
+            <span style={{ flex: 1, height: 1, background: '#CCCCCC' }} />
         </div>
     )
 }

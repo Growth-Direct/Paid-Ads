@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSellerClusterOptions, buildSellerSourceOptions } from '@/lib/seller/options'
+import { buildSellerSourceOptions } from '@/lib/seller/options'
 import { EMPTY_SELLER_SPEND_INGEST } from '@/lib/seller/spend/parse'
 import type { SellerFact, SellerFacts } from '@/lib/seller/facts'
 
@@ -23,8 +23,6 @@ function seller(over: Partial<SellerFact> & { rawSource: string; channel: Seller
         micromarkets: [],
         clusters: [],
         createdAt: '2026-07-10T09:00:00+05:30',
-        responseAt: null,
-        acefoneLeadId: null,
         ...over,
     }
 }
@@ -73,34 +71,5 @@ describe('buildSellerSourceOptions', () => {
         )
         const threeP = options.find((g) => g.id === '3P')!
         expect(threeP.children.map((c) => c.label)).toEqual(['99 Acres', 'MyGate', 'NoBroker'])
-    })
-})
-
-describe('buildSellerClusterOptions', () => {
-    // Added 2026-09-24 per an explicit growth-team request ("add unmapped for all non mapped
-    // micromarkets... and add that in the filter"): a live-derived "Unmapped" group, appended
-    // only when at least one seller's primary micromarket doesn't map to a named market.
-
-    it('omits the Unmapped group when every seller has a canonical primary micromarket', () => {
-        const options = buildSellerClusterOptions(facts([seller({ id: 'S1', rawSource: 'Meta', channel: 'Paid Ads', micromarkets: ['Powai'] })]))
-        expect(options.find((g) => g.id === 'Unmapped')).toBeUndefined()
-    })
-
-    it('adds a single-child Unmapped group when a seller carries a blank or unrecognised micromarket', () => {
-        const options = buildSellerClusterOptions(
-            facts([
-                seller({ id: 'S1', rawSource: 'Meta', channel: 'Paid Ads', micromarkets: ['Powai'] }),
-                seller({ id: 'S2', rawSource: 'Meta', channel: 'Paid Ads', micromarkets: ['Outside MM'] }),
-                seller({ id: 'S3', rawSource: 'Meta', channel: 'Paid Ads', micromarkets: [] }),
-            ])
-        )
-        const unmapped = options.find((g) => g.id === 'Unmapped')
-        expect(unmapped).toBeDefined()
-        expect(unmapped!.children).toEqual([{ id: 'Unmapped', label: 'Unmapped' }])
-    })
-
-    it('still lists every canonical cluster/micromarket regardless of live data', () => {
-        const options = buildSellerClusterOptions(facts([]))
-        expect(options.map((g) => g.id)).toEqual(['PAV', 'GLAM', 'BABU', 'HABIBI'])
     })
 })
