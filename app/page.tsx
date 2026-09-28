@@ -2,6 +2,7 @@
 
 import BuyerTab from '@/components/buyer/BuyerTab'
 import BudgetPacingTab from '@/components/budget/BudgetPacingTab'
+import SellerBudgetPacingTab from '@/components/budget/SellerBudgetPacingTab'
 import SellerTab from '@/components/seller/SellerTab'
 import Footer from '@/components/shared/Footer'
 import Nav, { type NavView } from '@/components/shared/Nav'
@@ -60,9 +61,10 @@ export default function Home() {
         refreshInterval: 300_000,
         keepPreviousData: true,
     })
-    // Only fetched while the seller tab is active, so opening the buyer tab does not pay for a
-    // seller Zoho build it isn't showing. The buyer hook above is unchanged.
-    const seller = useSWR<SellerFactsResponse>(activeView === 'seller' ? sellerKey : null, fetcher, {
+    // Fetched while the seller tab OR the Budget Pacing tab is active (the latter shows a
+    // seller pacing section too) — so opening just the buyer tab does not pay for a seller
+    // Zoho build it isn't showing. The buyer hook above is unchanged.
+    const seller = useSWR<SellerFactsResponse>(activeView === 'seller' || activeView === 'budget' ? sellerKey : null, fetcher, {
         refreshInterval: 300_000,
         keepPreviousData: true,
     })
@@ -92,7 +94,19 @@ export default function Home() {
                     <div style={{ color: '#333333', fontSize: 13 }}>Loading…</div>
                 ) : activeView === 'budget' ? (
                     // Reuses the already-fetched Buyer facts — no new Zoho fetch, no new API route.
-                    <BudgetPacingTab response={buyer.data} />
+                    // Seller pacing is fetched separately (see the `seller` SWR hook above) since
+                    // it needs its own Zoho build; shown as its own section once it lands, without
+                    // blocking the buyer section that's already ready.
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+                        <BudgetPacingTab response={buyer.data} />
+                        {seller.error ? (
+                            <div style={{ color: '#DC2626', fontSize: 13 }}>Failed to load seller budget pacing: {seller.error.message}</div>
+                        ) : seller.isLoading || !seller.data ? (
+                            <div style={{ color: '#333333', fontSize: 13 }}>Loading seller budget pacing…</div>
+                        ) : (
+                            <SellerBudgetPacingTab response={seller.data} />
+                        )}
+                    </div>
                 ) : (
                     <BuyerTab
                         response={buyer.data}

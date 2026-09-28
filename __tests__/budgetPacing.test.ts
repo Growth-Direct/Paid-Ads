@@ -57,16 +57,9 @@ const opts = {
 }
 
 describe('computeBudgetPacing — row structure (2026-09-26)', () => {
-    it('covers all 6 real channels', () => {
+    it('covers Paid Ads only, per the growth team (2026-09-29) — the live sheet has no other channel\'s spend', () => {
         const { byChannel } = computeBudgetPacing(baseFacts([]), opts)
-        expect(byChannel.map((r) => r.label)).toEqual([
-            'Paid Ads',
-            '3P',
-            'Offline Branding',
-            'Society WA Groups & Management Apps',
-            'Organic',
-            'Referral & WOM',
-        ])
+        expect(byChannel.map((r) => r.label)).toEqual(['Paid Ads'])
     })
 
     it('builds the exact Micromarket/Cluster hierarchy the growth team asked for, in order', () => {
@@ -100,13 +93,23 @@ describe('computeBudgetPacing — row structure (2026-09-26)', () => {
     it('"Andheri (E)" reads the same target-grid cell as the internal "Athens" key', () => {
         const { byMicromarket } = computeBudgetPacing(baseFacts([]), opts)
         const andheri = byMicromarket.find((r) => r.label === 'Andheri (E)')!
-        expect(andheri.quarterBudget).toBe(targetsFor({ micromarkets: ['Athens'] })?.spendInr)
+        expect(andheri.quarterBudget).toBe(targetsFor({ micromarkets: ['Athens'], channels: ['Paid Ads'] })?.spendInr)
+    })
+
+    it('scopes the micromarket budget to Paid Ads, not the blended ALL-channel row', () => {
+        // Verified against the growth team's own reference table (2026-09-29): Powai's Paid
+        // Ads target is ₹7,67,041. The ALL-channel row (₹13,26,737) is a different, larger
+        // number this table must NOT compare live ad-platform spend against.
+        const { byMicromarket } = computeBudgetPacing(baseFacts([]), opts)
+        const powai = byMicromarket.find((r) => r.label === 'Powai')!
+        expect(powai.quarterBudget).toBe(767041)
+        expect(powai.quarterBudget).not.toBe(targetsFor({ micromarkets: ['Powai'] })?.spendInr)
     })
 
     it('PAV subtotal equals the sum of Powai + Vegas + Athens', () => {
         const { byMicromarket } = computeBudgetPacing(baseFacts([]), opts)
         const pav = byMicromarket.find((r) => r.label === 'PAV')!
-        expect(pav.quarterBudget).toBe(targetsFor({ micromarkets: ['Powai', 'Vegas', 'Athens'] })?.spendInr)
+        expect(pav.quarterBudget).toBe(targetsFor({ micromarkets: ['Powai', 'Vegas', 'Athens'], channels: ['Paid Ads'] })?.spendInr)
     })
 
     it('BABU ex Singapore excludes Singapore, BABU incl. Singapore includes it', () => {
@@ -183,16 +186,4 @@ describe('computeBudgetPacing — daily-run-rate math (2026-09-26)', () => {
         expect(paidAds.pctOfBudgetSpent).toBe(0)
     })
 
-    it('a channel/micromarket with no target-grid budget shows null budgets, not zero', () => {
-        // Society WA Groups & Management Apps has spendInr 0 throughout the grid — treated as
-        // a real (zero) budget, not absent, so pctOfBudgetSpent is 0 rather than null there.
-        // Use a filter combination that genuinely has no grid cell instead: an empty result
-        // comes back only when targetsFor itself returns null, which doesn't happen for any
-        // real channel/micromarket in this grid — so assert the zero-budget case instead.
-        const { byChannel } = computeBudgetPacing(baseFacts([]), opts)
-        const society = byChannel.find((r) => r.label === 'Society WA Groups & Management Apps')!
-        expect(society.quarterBudget).toBe(0)
-        expect(society.pctOfBudgetSpent).toBeNull()
-        expect(society.runwayDays).toBeNull()
-    })
 })
