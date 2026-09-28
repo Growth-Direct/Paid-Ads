@@ -1,0 +1,1604 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`seller deriveReport golden > produces the same full output (locks the six cards) 1`] = `
+{
+  "acqPipelineByMicromarket": {
+    "new": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Internally Rejected": 1,
+          "MoU Signed": 1,
+          "Valuation Completed": 1,
+        },
+        "leadIds": {
+          "Internally Rejected": [
+            "S6",
+          ],
+          "MoU Signed": [
+            "S1",
+          ],
+          "Valuation Completed": [
+            "S1",
+          ],
+        },
+      },
+      {
+        "cluster": "Amsterdam",
+        "counts": {
+          "Negotiations": 1,
+          "Pitched to Seller": 1,
+        },
+        "leadIds": {
+          "Negotiations": [
+            "S3",
+          ],
+          "Pitched to Seller": [
+            "S3",
+          ],
+        },
+      },
+    ],
+    "old": [],
+  },
+  "acqPipelineByMicromarketTillDate": {
+    "new": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Internally Rejected": 1,
+          "MoU Signed": 1,
+          "Valuation Completed": 1,
+        },
+        "leadIds": {
+          "Internally Rejected": [
+            "S6",
+          ],
+          "MoU Signed": [
+            "S1",
+          ],
+          "Valuation Completed": [
+            "S1",
+          ],
+        },
+      },
+      {
+        "cluster": "Amsterdam",
+        "counts": {
+          "Negotiations": 1,
+          "Pitched to Seller": 1,
+        },
+        "leadIds": {
+          "Negotiations": [
+            "S3",
+          ],
+          "Pitched to Seller": [
+            "S3",
+          ],
+        },
+      },
+    ],
+    "old": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Deal Lost": 1,
+          "MoU Signed": 2,
+          "Recycled": 1,
+        },
+        "leadIds": {
+          "Deal Lost": [
+            "S8",
+          ],
+          "MoU Signed": [
+            "S4",
+            "S10",
+          ],
+          "Recycled": [
+            "S9",
+          ],
+        },
+      },
+    ],
+  },
+  "convRatePct": 50,
+  "expectedPctOfTarget": 44.6,
+  "frtByWeek": [
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "avgMinutes": null,
+      "count": 0,
+      "medianMinutes": null,
+      "p80Minutes": null,
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "leadsByChannel": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "3P": 1,
+        "Organic": 1,
+        "Paid Ads": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "3P": [
+          "S2",
+        ],
+        "Organic": [
+          "S5",
+        ],
+        "Paid Ads": [
+          "S1",
+        ],
+      },
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Paid Ads": 3,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "S6",
+          "S11",
+          "S12",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Cold Outreach": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Cold Outreach": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "leadsByStatus": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Attempted to Contact": 1,
+        "Not qualified": 1,
+        "Qualified": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Attempted to Contact": [
+          "S5",
+        ],
+        "Not qualified": [
+          "S2",
+        ],
+        "Qualified": [
+          "S1",
+        ],
+      },
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Already sold the flat": 1,
+        "Prospect": 1,
+        "Qualified": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Already sold the flat": [
+          "S11",
+        ],
+        "Prospect": [
+          "S12",
+        ],
+        "Qualified": [
+          "S6",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Explore Later": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Explore Later": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "ltqlPct": 71.4,
+  "notQualifiedReasons": [
+    {
+      "count": 1,
+      "leadIds": [
+        "S2",
+      ],
+      "reason": "Budget mismatch",
+    },
+  ],
+  "notTruvaApprovedSubReasons": [],
+  "overallFunnel": {
+    "directConversionsTotal": 2,
+    "ltqlPct": 71.4,
+    "ltqlTarget": 14.8,
+    "newConvRatePct": 50,
+    "newConvRateTarget": 9.1,
+    "newConversions": {
+      "actual": 1,
+      "target": 32,
+    },
+    "newQltvPct": 40,
+    "newQltvTarget": 50.1,
+    "newVisits": {
+      "actual": 2,
+      "target": 351,
+    },
+    "oldConvRatePct": 100,
+    "oldConvRateTarget": 13.8,
+    "oldConversions": {
+      "actual": 1,
+      "target": 4,
+    },
+    "oldQltvPct": 20,
+    "oldQltvTarget": 4.1,
+    "oldVisits": {
+      "actual": 1,
+      "target": 29,
+    },
+    "pipelineCount": 1,
+    "qualified": {
+      "actual": 5,
+      "target": 701,
+    },
+    "totalConversions": {
+      "actual": 2,
+      "target": 36,
+    },
+    "totalConversionsWithChannelPartner": 2,
+    "totalVisits": {
+      "actual": 3,
+      "target": 380,
+    },
+    "uniqueLeads": {
+      "actual": 7,
+      "target": 4723,
+    },
+  },
+  "overallFunnelProperty": {
+    "directConversionsTotal": 2,
+    "newConvRatePct": 25,
+    "newConvRateTarget": 9.1,
+    "newConversions": {
+      "actual": 1,
+      "target": 32,
+    },
+    "newVisitPct": 50,
+    "newVisitTarget": 50.1,
+    "newVisits": {
+      "actual": 4,
+      "target": 351,
+    },
+    "oldConvRatePct": 100,
+    "oldConvRateTarget": 13.8,
+    "oldConversions": {
+      "actual": 1,
+      "target": 4,
+    },
+    "oldVisitPct": 12.5,
+    "oldVisitTarget": 4.1,
+    "oldVisits": {
+      "actual": 1,
+      "target": 29,
+    },
+    "pipelineCount": 1,
+    "qualPct": 114.3,
+    "qualTarget": 14.8,
+    "qualifiedProperties": {
+      "actual": 8,
+      "target": 701,
+    },
+    "totalConversions": {
+      "actual": 2,
+      "target": 36,
+    },
+    "totalConversionsWithChannelPartner": 2,
+    "totalVisits": {
+      "actual": 5,
+      "target": 380,
+    },
+    "uniqueLeads": {
+      "actual": 7,
+      "target": 4723,
+    },
+  },
+  "pipelineByCluster": [
+    {
+      "cluster": "PAV",
+      "counts": {
+        "Powai": 1,
+      },
+      "leadIds": {
+        "Powai": [
+          "S6",
+        ],
+      },
+    },
+  ],
+  "pipelineByMicromarket": {
+    "new": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Visit to be Scheduled": 1,
+        },
+        "leadIds": {
+          "Visit to be Scheduled": [
+            "S6",
+          ],
+        },
+      },
+    ],
+    "old": [],
+  },
+  "pipelineByMicromarketTillDate": {
+    "new": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Visit to be Scheduled": 1,
+        },
+        "leadIds": {
+          "Visit to be Scheduled": [
+            "S6",
+          ],
+        },
+      },
+    ],
+    "old": [],
+  },
+  "postVisitTat": {
+    "stages": [
+      {
+        "countNew": 4,
+        "countOld": 1,
+        "leadIdsNew": [
+          "S1",
+          "S1",
+          "S3",
+          "S3",
+        ],
+        "leadIdsOld": [
+          "S4",
+        ],
+        "stage": "Visit Completed",
+      },
+      {
+        "countNew": 0,
+        "countOld": 0,
+        "leadIdsNew": [],
+        "leadIdsOld": [],
+        "stage": "Sent for Valuation",
+      },
+      {
+        "countNew": 0,
+        "countOld": 0,
+        "leadIdsNew": [],
+        "leadIdsOld": [],
+        "stage": "Valuation Completed",
+      },
+      {
+        "countNew": 0,
+        "countOld": 0,
+        "leadIdsNew": [],
+        "leadIdsOld": [],
+        "stage": "Offer Made to Seller",
+      },
+    ],
+    "transitions": [
+      {
+        "from": "Visit Completed",
+        "pairsNew": 0,
+        "pairsOld": 0,
+        "sumDaysNew": 0,
+        "sumDaysOld": 0,
+        "to": "Sent for Valuation",
+      },
+      {
+        "from": "Sent for Valuation",
+        "pairsNew": 0,
+        "pairsOld": 0,
+        "sumDaysNew": 0,
+        "sumDaysOld": 0,
+        "to": "Valuation Completed",
+      },
+      {
+        "from": "Valuation Completed",
+        "pairsNew": 0,
+        "pairsOld": 0,
+        "sumDaysNew": 0,
+        "sumDaysOld": 0,
+        "to": "Offer Made to Seller",
+      },
+    ],
+  },
+  "propertyVisitsByCohort": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "New": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "New": [
+          "S1",
+          "S1",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {
+        "Old": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Old": [
+          "S4",
+        ],
+      },
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {
+        "New": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "New": [
+          "S3",
+        ],
+      },
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "propertyVisitsByDirectCp": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Direct": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Direct": [
+          "S1",
+          "S1",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Direct": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Direct": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {
+        "Direct": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Direct": [
+          "S3",
+        ],
+      },
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qltvPct": 40,
+  "qualifiedLeadsByChannel": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Paid Ads": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "S1",
+        ],
+      },
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Paid Ads": 3,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "S6",
+          "S11",
+          "S12",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Cold Outreach": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Cold Outreach": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedLeadsByMicromarket": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Powai": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "S1",
+        ],
+      },
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Powai": 3,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "S6",
+          "S11",
+          "S12",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Amsterdam": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Amsterdam": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedLeadsByMicromarketQuarter": [
+    {
+      "actual": 4,
+      "micromarket": "Powai",
+      "target": 125,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Vegas",
+      "target": 96,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Athens",
+      "target": 39,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Glasgow",
+      "target": 103,
+    },
+    {
+      "actual": 1,
+      "micromarket": "Amsterdam",
+      "target": 98,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Boston",
+      "target": 40,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Barcelona",
+      "target": 37,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Singapore",
+      "target": 58,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Helsinki",
+      "target": 104,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Berlin",
+      "target": 104,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Hong Kong",
+      "target": 104,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Ibiza",
+      "target": 104,
+    },
+  ],
+  "qualifiedPropertiesByChannel": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {
+        "Paid Ads": 3,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "S1",
+          "S1",
+          "S1",
+        ],
+      },
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Paid Ads": 2,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "S6",
+          "S6",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Cold Outreach": 2,
+        "Paid Ads": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Cold Outreach": [
+          "S3",
+          "S3",
+        ],
+        "Paid Ads": [
+          "S6",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "qualifiedVisitsByMicromarketQuarter": [
+    {
+      "actual": 1,
+      "micromarket": "Powai",
+      "target": 61,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Vegas",
+      "target": 50,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Athens",
+      "target": 23,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Glasgow",
+      "target": 57,
+    },
+    {
+      "actual": 1,
+      "micromarket": "Amsterdam",
+      "target": 58,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Boston",
+      "target": 21,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Barcelona",
+      "target": 17,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Singapore",
+      "target": 24,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Helsinki",
+      "target": 40,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Berlin",
+      "target": 40,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Hong Kong",
+      "target": 40,
+    },
+    {
+      "actual": 0,
+      "micromarket": "Ibiza",
+      "target": 40,
+    },
+  ],
+  "quarterLabel": "JAS 2026",
+  "sellerVisitsByChannel": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Paid Ads": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Paid Ads": [
+          "S1",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Cold Outreach": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Cold Outreach": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {
+        "Cold Outreach": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Cold Outreach": [
+          "S3",
+        ],
+      },
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "sellerVisitsByMicromarket": [
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "29 Jun",
+      "weekStart": "2026-06-29",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "6 Jul",
+      "weekStart": "2026-07-06",
+    },
+    {
+      "counts": {
+        "Powai": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Powai": [
+          "S1",
+        ],
+      },
+      "weekLabel": "13 Jul",
+      "weekStart": "2026-07-13",
+    },
+    {
+      "counts": {
+        "Amsterdam": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Amsterdam": [
+          "S3",
+        ],
+      },
+      "weekLabel": "20 Jul",
+      "weekStart": "2026-07-20",
+    },
+    {
+      "counts": {},
+      "incomplete": false,
+      "leadIds": {},
+      "weekLabel": "27 Jul",
+      "weekStart": "2026-07-27",
+    },
+    {
+      "counts": {
+        "Amsterdam": 1,
+      },
+      "incomplete": false,
+      "leadIds": {
+        "Amsterdam": [
+          "S3",
+        ],
+      },
+      "weekLabel": "3 Aug",
+      "weekStart": "2026-08-03",
+    },
+    {
+      "counts": {},
+      "incomplete": true,
+      "leadIds": {},
+      "weekLabel": "10 Aug",
+      "weekStart": "2026-08-10",
+    },
+  ],
+  "sellersById": {
+    "S1": {
+      "createdAt": "2026-07-10T09:00:00+05:30",
+      "id": "S1",
+      "name": "Seller S1",
+      "source": "Paid Ads",
+      "status": "Qualified",
+    },
+    "S11": {
+      "createdAt": "2026-07-16T09:00:00+05:30",
+      "id": "S11",
+      "name": "Seller S11",
+      "source": "Paid Ads",
+      "status": "Already sold the flat",
+    },
+    "S12": {
+      "createdAt": "2026-07-17T09:00:00+05:30",
+      "id": "S12",
+      "name": "Seller S12",
+      "source": "Paid Ads",
+      "status": "Prospect",
+    },
+    "S2": {
+      "createdAt": "2026-07-12T09:00:00+05:30",
+      "id": "S2",
+      "name": "Seller S2",
+      "source": "3P",
+      "status": "Not qualified",
+    },
+    "S3": {
+      "createdAt": "2026-07-20T09:00:00+05:30",
+      "id": "S3",
+      "name": "Seller S3",
+      "source": "Cold Outreach",
+      "status": "Explore Later",
+    },
+    "S5": {
+      "createdAt": "2026-07-08T09:00:00+05:30",
+      "id": "S5",
+      "name": "Seller S5",
+      "source": "Organic",
+      "status": "Network Issue",
+    },
+    "S6": {
+      "createdAt": "2026-07-14T09:00:00+05:30",
+      "id": "S6",
+      "name": "Seller S6",
+      "source": "Paid Ads",
+      "status": "Qualified",
+    },
+  },
+  "spendExcludedUnallocated": 0,
+  "spendIngest": {
+    "builtAt": null,
+    "droppedBadDate": 0,
+    "droppedBadSpend": 0,
+    "error": "No seller spend snapshot loaded",
+    "origin": "snapshot",
+    "rowsKept": 0,
+    "rowsRead": 0,
+    "slashOrder": null,
+    "status": "unavailable",
+    "unallocatedInr": 0,
+    "unknownMicromarkets": [],
+    "unmappedSources": [],
+  },
+  "stalledConversionsByMicromarket": {
+    "new": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Valuation Completed": 1,
+        },
+        "leadIds": {
+          "Valuation Completed": [
+            "S1",
+          ],
+        },
+      },
+    ],
+    "old": [],
+  },
+  "stalledConversionsByMicromarketTillDate": {
+    "new": [
+      {
+        "cluster": "Powai",
+        "counts": {
+          "Valuation Completed": 1,
+        },
+        "leadIds": {
+          "Valuation Completed": [
+            "S1",
+          ],
+        },
+      },
+    ],
+    "old": [],
+  },
+  "targetVsAchieved": [
+    {
+      "metric": "Spend",
+      "nextW2Target": 499948.37,
+      "nextW2TargetProRata": 901867.647,
+      "qAchieved": 0,
+      "qLag": 1464134.511,
+      "qPctCompleted": 0,
+      "qTarget": 1464134.511,
+      "qTargetFull": 3285375,
+      "unit": "currency",
+      "w2Achieved": 0,
+      "w2Lag": 499948.37,
+      "w2Target": 499948.37,
+    },
+    {
+      "metric": "GMV Acquired",
+      "nextW2Target": null,
+      "nextW2TargetProRata": 0,
+      "qAchieved": 8000000,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": null,
+      "qTargetFull": null,
+      "unit": "currency",
+      "w2Achieved": 3000000,
+      "w2Lag": null,
+      "w2Target": null,
+    },
+    {
+      "metric": "% Spends of GMV",
+      "nextW2Target": null,
+      "nextW2TargetProRata": 0,
+      "qAchieved": 0,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": null,
+      "qTargetFull": null,
+      "unit": "%",
+      "w2Achieved": 0,
+      "w2Lag": null,
+      "w2Target": null,
+    },
+    {
+      "metric": "CPL",
+      "nextW2Target": 695.6118992165996,
+      "nextW2TargetProRata": 695.6118992165996,
+      "qAchieved": null,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": 695.6118992165996,
+      "qTargetFull": 695.6118992165996,
+      "unit": "currency",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": 695.6118992165996,
+    },
+    {
+      "metric": "Total Leads",
+      "nextW2Target": 718.717,
+      "nextW2TargetProRata": 1294.588,
+      "qAchieved": 7,
+      "qLag": 2097.815,
+      "qPctCompleted": 0.1,
+      "qTarget": 2104.815,
+      "qTargetFull": 4723,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": 718.717,
+      "w2Target": 718.717,
+    },
+    {
+      "metric": "Total Qualified Seller Leads",
+      "nextW2Target": 106.674,
+      "nextW2TargetProRata": 191.059,
+      "qAchieved": 5,
+      "qLag": 307.402,
+      "qPctCompleted": 0.7,
+      "qTarget": 312.402,
+      "qTargetFull": 701,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": 106.674,
+      "w2Target": 106.674,
+    },
+    {
+      "metric": "Attempted to Contact %",
+      "nextW2Target": null,
+      "nextW2TargetProRata": 0,
+      "qAchieved": 14.3,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": null,
+      "qTargetFull": null,
+      "unit": "%",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": null,
+    },
+    {
+      "metric": "Not Qualified %",
+      "nextW2Target": null,
+      "nextW2TargetProRata": 0,
+      "qAchieved": 14.3,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": null,
+      "qTargetFull": null,
+      "unit": "%",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": null,
+    },
+    {
+      "metric": "Qualified Property Leads",
+      "nextW2Target": 106.674,
+      "nextW2TargetProRata": 190.235,
+      "qAchieved": 8,
+      "qLag": 304.402,
+      "qPctCompleted": 1.1,
+      "qTarget": 312.402,
+      "qTargetFull": 701,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": 106.674,
+      "w2Target": 106.674,
+    },
+    {
+      "metric": "LTQL %",
+      "nextW2Target": 14.8,
+      "nextW2TargetProRata": 14.8,
+      "qAchieved": 71.4,
+      "qLag": -56.6,
+      "qPctCompleted": 482.4,
+      "qTarget": 14.8,
+      "qTargetFull": 14.8,
+      "unit": "%",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": 14.8,
+    },
+    {
+      "metric": "CPQL",
+      "nextW2Target": 4686.69757489301,
+      "nextW2TargetProRata": 4686.69757489301,
+      "qAchieved": null,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": 4686.69757489301,
+      "qTargetFull": 4686.69757489301,
+      "unit": "currency",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": 4686.69757489301,
+    },
+    {
+      "metric": "Unique Seller Total Visits",
+      "nextW2Target": 57.826,
+      "nextW2TargetProRata": 103.49,
+      "qAchieved": 3,
+      "qLag": 166.348,
+      "qPctCompleted": 0.8,
+      "qTarget": 169.348,
+      "qTargetFull": 380,
+      "unit": "count",
+      "w2Achieved": 1,
+      "w2Lag": 56.826,
+      "w2Target": 57.826,
+    },
+    {
+      "metric": "Unique Seller New Visits",
+      "nextW2Target": 53.413,
+      "nextW2TargetProRata": 95.804,
+      "qAchieved": 2,
+      "qLag": 154.424,
+      "qPctCompleted": 0.6,
+      "qTarget": 156.424,
+      "qTargetFull": 351,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": 53.413,
+      "w2Target": 53.413,
+    },
+    {
+      "metric": "Unique Seller Old Visits",
+      "nextW2Target": 4.413,
+      "nextW2TargetProRata": 7.686,
+      "qAchieved": 1,
+      "qLag": 11.924,
+      "qPctCompleted": 3.4,
+      "qTarget": 12.924,
+      "qTargetFull": 29,
+      "unit": "count",
+      "w2Achieved": 1,
+      "w2Lag": 3.413,
+      "w2Target": 4.413,
+    },
+    {
+      "metric": "QLTV %",
+      "nextW2Target": 50.1,
+      "nextW2TargetProRata": 50.1,
+      "qAchieved": 40,
+      "qLag": 10.1,
+      "qPctCompleted": 79.8,
+      "qTarget": 50.1,
+      "qTargetFull": 50.1,
+      "unit": "%",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": 50.1,
+    },
+    {
+      "metric": "Unique Property Total Visits",
+      "nextW2Target": 57.826,
+      "nextW2TargetProRata": 102.941,
+      "qAchieved": 5,
+      "qLag": 164.348,
+      "qPctCompleted": 1.3,
+      "qTarget": 169.348,
+      "qTargetFull": 380,
+      "unit": "count",
+      "w2Achieved": 1,
+      "w2Lag": 56.826,
+      "w2Target": 57.826,
+    },
+    {
+      "metric": "New Property Visits",
+      "nextW2Target": 53.413,
+      "nextW2TargetProRata": 95.255,
+      "qAchieved": 4,
+      "qLag": 152.424,
+      "qPctCompleted": 1.1,
+      "qTarget": 156.424,
+      "qTargetFull": 351,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": 53.413,
+      "w2Target": 53.413,
+    },
+    {
+      "metric": "Old Property Visits",
+      "nextW2Target": 4.413,
+      "nextW2TargetProRata": 7.686,
+      "qAchieved": 1,
+      "qLag": 11.924,
+      "qPctCompleted": 3.4,
+      "qTarget": 12.924,
+      "qTargetFull": 29,
+      "unit": "count",
+      "w2Achieved": 1,
+      "w2Lag": 3.413,
+      "w2Target": 4.413,
+    },
+    {
+      "metric": "CPV",
+      "nextW2Target": 9360.042735042734,
+      "nextW2TargetProRata": 9360.042735042734,
+      "qAchieved": null,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": 9360.042735042734,
+      "qTargetFull": 9360.042735042734,
+      "unit": "currency",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": 9360.042735042734,
+    },
+    {
+      "metric": "Visits in Pipeline",
+      "nextW2Target": null,
+      "nextW2TargetProRata": 0,
+      "qAchieved": 1,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": null,
+      "qTargetFull": null,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": null,
+      "w2Target": null,
+    },
+    {
+      "metric": "Total Property Conversions",
+      "nextW2Target": 5.478,
+      "nextW2TargetProRata": 9.333,
+      "qAchieved": 2,
+      "qLag": 14.043,
+      "qPctCompleted": 5.6,
+      "qTarget": 16.043,
+      "qTargetFull": 36,
+      "unit": "count",
+      "w2Achieved": 1,
+      "w2Lag": 4.478,
+      "w2Target": 5.478,
+    },
+    {
+      "metric": "New Conversions",
+      "nextW2Target": 4.87,
+      "nextW2TargetProRata": 8.51,
+      "qAchieved": 1,
+      "qLag": 13.261,
+      "qPctCompleted": 3.1,
+      "qTarget": 14.261,
+      "qTargetFull": 32,
+      "unit": "count",
+      "w2Achieved": 0,
+      "w2Lag": 4.87,
+      "w2Target": 4.87,
+    },
+    {
+      "metric": "Old Conversions",
+      "nextW2Target": 0.609,
+      "nextW2TargetProRata": 0.824,
+      "qAchieved": 1,
+      "qLag": 0.783,
+      "qPctCompleted": 25,
+      "qTarget": 1.783,
+      "qTargetFull": 4,
+      "unit": "count",
+      "w2Achieved": 1,
+      "w2Lag": -0.391,
+      "w2Target": 0.609,
+    },
+    {
+      "metric": "CAC",
+      "nextW2Target": 102667.96875,
+      "nextW2TargetProRata": 102667.96875,
+      "qAchieved": null,
+      "qLag": null,
+      "qPctCompleted": null,
+      "qTarget": 102667.96875,
+      "qTargetFull": 102667.96875,
+      "unit": "currency",
+      "w2Achieved": null,
+      "w2Lag": null,
+      "w2Target": 102667.96875,
+    },
+  ],
+  "windowWeeks": 7,
+}
+`;

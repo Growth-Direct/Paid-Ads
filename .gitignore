@@ -1,0 +1,18 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+# Raw spend export — large, PII-adjacent, never committed. Only the aggregate JSON is.
+scripts/spend-raw.csv
+scripts/seller-spend-raw.csv
+
+# Claude Code agent worktrees (scratch, never committed)
+.claude/worktrees/
+
+# Backfill generator caches and outputs — regenerate, never commit.
+scripts/.cache-*.json
+scripts/ob-backfill.csv
+scripts/3p-subscriptions.csv
