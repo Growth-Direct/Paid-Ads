@@ -79,6 +79,7 @@ describe('computeBudgetPacing — row structure (2026-09-26)', () => {
             'BABU ex Singapore',
             'TOTAL — Truva ex BLR',
             'Bangalore',
+            'All MM',
             'TOTAL — Truva inc. BLR',
         ])
         const kinds = byMicromarket.map((r) => r.kind)
@@ -87,7 +88,20 @@ describe('computeBudgetPacing — row structure (2026-09-26)', () => {
         expect(kinds[10]).toBe('subtotal') // BABU incl.
         expect(kinds[11]).toBe('subtotal') // BABU ex
         expect(kinds[12]).toBe('grandTotal') // ex BLR
-        expect(kinds[14]).toBe('grandTotal') // inc BLR
+        expect(kinds[15]).toBe('grandTotal') // inc BLR
+    })
+
+    it('"All MM" has no target but counts real spend with no micromarket, and both grand totals include it', () => {
+        const spendRows: SpendFact[] = [
+            { date: '2026-07-05', spendInr: 1000, micromarket: null, channel: 'Paid Ads', rawSource: 'meta', impressions: 0, clicks: 0 },
+            spend({ date: '2026-07-05', spendInr: 500, micromarket: 'Powai', channel: 'Paid Ads' }),
+        ]
+        const { byMicromarket } = computeBudgetPacing(baseFacts(spendRows), opts)
+        const allMm = byMicromarket.find((r) => r.label === 'All MM')!
+        const exBlr = byMicromarket.find((r) => r.label === 'TOTAL — Truva ex BLR')!
+        expect(allMm.quarterBudget).toBeNull()
+        expect(allMm.spentTillYesterday).toBe(1000)
+        expect(exBlr.spentTillYesterday).toBeGreaterThanOrEqual(1500)
     })
 
     it('"Andheri (E)" reads the same target-grid cell as the internal "Athens" key', () => {

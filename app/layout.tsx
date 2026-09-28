@@ -1,5 +1,3 @@
-import AuthWrapper from '@/components/shared/AuthWrapper'
-import { SessionGuard } from '@/lib/auth0/SessionGuard'
 import type { Metadata } from 'next'
 import React from 'react'
 import './globals.css'
@@ -25,12 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     rel="stylesheet"
                 />
             </head>
-            <AuthWrapper>
-                <body>
-                    <SessionGuard />
-                    {children}
-                </body>
-            </AuthWrapper>
+            <body>{children}</body>
         </html>
     )
 }

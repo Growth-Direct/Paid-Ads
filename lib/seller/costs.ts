@@ -100,6 +100,35 @@ export function computeSellerSpendForWindow(
     return { total, excludedUnallocated }
 }
 
+/** The complement of computeSellerSpendForWindow's place filter: spend with NO micromarket at
+ *  all (a campaign name a micromarket couldn't be placed for — see
+ *  sellerMicromarketFromCampaignName), matching channel/source the same way. Backs the Budget
+ *  Pacing "All MM" row — the growth team wants this money visible as its own category
+ *  (2026-09-29), the seller sibling of lib/buyer/costs.ts's computeUnallocatedSpendForWindow. */
+export function computeSellerUnallocatedSpendForWindow(
+    facts: SellerFacts,
+    filters: SellerFilters,
+    windowStart: Date,
+    windowEnd: Date
+): number {
+    const startMs = windowStart.getTime()
+    const endMs = windowEnd.getTime()
+    const inWindow = (iso: string): boolean => {
+        const t = new Date(iso).getTime()
+        return !Number.isNaN(t) && t >= startMs && t < endMs
+    }
+    let total = 0
+    for (const s of facts.spend) {
+        if (s.micromarket) continue
+        if (!inWindow(s.date)) continue
+        if (filters.sources.length > 0) {
+            if (!filters.sources.some((sel) => sourceKey(sel) === sourceKey(s.rawSource))) continue
+        } else if (filters.channels.length > 0 && !filters.channels.includes(s.channel)) continue
+        total += s.spendInr
+    }
+    return total
+}
+
 /** A cost-per metric: null, never zero, whenever spend or the denominator is absent. A ₹0
  *  reads as free, which is the one wrong answer nobody double-checks. Mirrors
  *  lib/buyer/derive.ts's divRaw. */

@@ -73,8 +73,21 @@ describe('computeSellerBudgetPacing — row structure', () => {
             'BABU ex Singapore',
             'TOTAL — Truva ex BLR',
             'Bangalore',
+            'All MM',
             'TOTAL — Truva inc. BLR',
         ])
+    })
+
+    it('"All MM" has no target but counts real spend with no micromarket, and both grand totals include it', () => {
+        const spendRows: SellerSpendFact[] = [
+            { date: '2026-07-05', spendInr: 1000, micromarket: null, channel: 'Paid Ads', rawSource: 'meta', impressions: 0, clicks: 0 },
+        ]
+        const { byMicromarket } = computeSellerBudgetPacing(baseFacts(spendRows), opts)
+        const allMm = byMicromarket.find((r) => r.label === 'All MM')!
+        const exBlr = byMicromarket.find((r) => r.label === 'TOTAL — Truva ex BLR')!
+        expect(allMm.quarterBudget).toBeNull()
+        expect(allMm.spentTillYesterday).toBe(1000)
+        expect(exBlr.spentTillYesterday).toBeGreaterThanOrEqual(1000)
     })
 
     it('scopes every micromarket budget to Paid Ads, not the blended Overall row', () => {

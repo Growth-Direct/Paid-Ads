@@ -28,9 +28,10 @@ export default function SellerBudgetPacingTab({ response }: { response: SellerFa
             <SectionHeader title={`Seller Budget Pacing — ${response.quarterLabel}`} />
             <div style={{ fontSize: 12.5, color: '#333333', ...MONO }}>
                 Spend pacing by Channel and by Micromarket/Cluster, broken into a daily run-rate view: how much
-                should be spent by today, what&apos;s actually gone out (through yesterday), and how many more days
-                the remaining budget lasts at the last 7 days&apos; pace. Always the full reporting quarter; this
-                tab has no time filter.
+                should be spent by today, what&apos;s actually gone out (total spend through the last date the
+                growth sheet has updated — not necessarily yesterday, if the sheet is a day or two behind), and how
+                many more days the remaining budget lasts at the last 7 days&apos; pace. Always the full reporting
+                quarter; this tab has no time filter.
             </div>
 
             <ChartCard title="Seller Budget Pacing by Channel" height="auto">

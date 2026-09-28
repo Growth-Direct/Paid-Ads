@@ -43,6 +43,37 @@ export function computeSpendForWindow(
     return total
 }
 
+/** The complement of spendMatches's micromarket check: matches ONLY spend with no
+ *  micromarket at all (a generic/cluster-level/AllMM campaign name — see
+ *  micromarketFromCampaignName). Channel/source filters still apply, exactly as they do for
+ *  named-micromarket spend. Backs the Budget Pacing "All MM" row — the growth team wants this
+ *  money visible as its own category (2026-09-29), not silently missing from every
+ *  by-micromarket cut. */
+function unallocatedSpendMatches(s: SpendFact, f: BuyerFilters): boolean {
+    if (f.channels.length > 0 && !f.channels.includes(s.channel)) return false
+    if (f.sources.length > 0 && !f.sources.includes(s.rawSource)) return false
+    return s.micromarket === null
+}
+
+export function computeUnallocatedSpendForWindow(
+    facts: BuyerFacts,
+    filters: BuyerFilters,
+    windowStart: Date,
+    windowEnd: Date
+): number {
+    const inWindow = (iso: string): boolean => {
+        const d = new Date(iso)
+        return !Number.isNaN(d.getTime()) && d >= windowStart && d < windowEnd
+    }
+    let total = 0
+    for (const s of facts.spend) {
+        if (!inWindow(s.date)) continue
+        if (!unallocatedSpendMatches(s, filters)) continue
+        total += s.spendInr
+    }
+    return total
+}
+
 // Same row-level filter as computeSpendForWindow, grouped into the same weekly buckets the
 // WoW charts use, instead of summed over one window — backs the new WoW CPL/CPQL/CPV trend
 // charts (derive.ts). `bucketOf` is the exact function `buildBuckets` (shared.ts) hands the

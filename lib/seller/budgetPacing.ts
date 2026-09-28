@@ -1,5 +1,5 @@
 import { CLUSTER_TREE, IST_OFFSET_MS } from '@/lib/buyer/shared'
-import { computeSellerSpendForWindow } from './costs'
+import { computeSellerSpendForWindow, computeSellerUnallocatedSpendForWindow } from './costs'
 import type { SellerFacts } from './facts'
 import { EMPTY_SELLER_FILTERS, type SellerFilters } from './filters'
 import { sellerTargetsFor } from './targets'
@@ -114,6 +114,14 @@ function buildMicromarketRows(facts: SellerFacts, windows: Windows): BudgetPacin
         const quarterBudget = target.covered ? target.spendInr : null
         return buildRow(label, kind, quarterBudget, windows, (s, e) => computeSellerSpendForWindow(facts, filters, s, e).total)
     }
+    const unallocatedFilters: SellerFilters = { ...EMPTY_SELLER_FILTERS, channels: ['Paid Ads'] }
+    const unallocatedComputer: SpendComputer = (s, e) => computeSellerUnallocatedSpendForWindow(facts, unallocatedFilters, s, e)
+    const totalOf = (label: string, micromarkets: string[]) => {
+        const filters: SellerFilters = { ...EMPTY_SELLER_FILTERS, micromarkets, channels: ['Paid Ads'] }
+        const target = sellerTargetsFor({ micromarkets, channels: ['Paid Ads'] })
+        const quarterBudget = target.covered ? target.spendInr : null
+        return buildRow(label, 'grandTotal', quarterBudget, windows, (s, e) => computeSellerSpendForWindow(facts, filters, s, e).total + unallocatedComputer(s, e))
+    }
 
     const pav = CLUSTER_TREE.PAV! // ['Powai', 'Vegas', 'Athens']
     const glam = CLUSTER_TREE.GLAM! // ['Glasgow', 'Amsterdam']
@@ -137,9 +145,11 @@ function buildMicromarketRows(facts: SellerFacts, windows: Windows): BudgetPacin
         rowOf('Singapore', 'leaf', ['Singapore']),
         rowOf('BABU (incl. Singapore)', 'subtotal', babu),
         rowOf('BABU ex Singapore', 'subtotal', babuExSingapore),
-        rowOf('TOTAL — Truva ex BLR', 'grandTotal', exBlr),
+        totalOf('TOTAL — Truva ex BLR', exBlr),
         rowOf('Bangalore', 'leaf', habibi),
-        rowOf('TOTAL — Truva inc. BLR', 'grandTotal', [...exBlr, ...habibi]),
+        // No target: the grid has no cell for a campaign that named no micromarket at all.
+        buildRow('All MM', 'leaf', null, windows, unallocatedComputer),
+        totalOf('TOTAL — Truva inc. BLR', [...exBlr, ...habibi]),
     ]
 }
 

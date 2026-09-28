@@ -1,4 +1,4 @@
-import { computeSpendForWindow } from './costs'
+import { computeSpendForWindow, computeUnallocatedSpendForWindow } from './costs'
 import type { BuyerFacts } from './facts'
 import { EMPTY_FILTERS, type BuyerFilters } from './filters'
 import { CLUSTER_TREE, IST_OFFSET_MS } from './shared'
@@ -147,14 +147,25 @@ function buildChannelRows(facts: BuyerFacts, windows: Windows): BudgetPacingDeta
  *  return — this table paces the live ad-platform sheet's spend, which is Paid Ads only, so
  *  the budget it's measured against has to be too. Verified against the growth team's own
  *  reference table 2026-09-29: Powai's Paid Ads target is ₹7,67,041, not the ALL-channel
- *  ₹13,26,737 this used to compare against, and the two "TOTAL" rows below sum to exactly the
- *  reference's ₹61,57,528 / ₹62,05,528 only under the Paid Ads scoping. Getting this wrong
- *  doesn't just mislabel a number — it makes every % of budget spent read far too low. */
+ *  ₹13,26,737 this used to compare against.
+ *
+ *  "All MM" is its own category (2026-09-29, per explicit growth-team direction) for spend a
+ *  campaign name couldn't place in one micromarket — no target (the grid has no cell for it),
+ *  real actual spend. Both grand totals ADD it on top of their named-micromarket sum, so by-
+ *  micromarket spend totals the same as by-channel spend; a campaign naming no micromarket is
+ *  still money actually spent, not money that should vanish from the total. */
 function buildMicromarketRows(facts: BuyerFacts, windows: Windows): BudgetPacingDetailRow[] {
     const rowOf = (label: string, kind: BudgetPacingDetailRow['kind'], micromarkets: string[]) => {
         const filters: BuyerFilters = { ...EMPTY_FILTERS, micromarkets, channels: ['Paid Ads'] }
         const quarterBudget = targetsFor({ micromarkets, channels: ['Paid Ads'] })?.spendInr ?? null
         return buildRow(label, kind, quarterBudget, windows, (s, e) => computeSpendForWindow(facts, filters, s, e))
+    }
+    const unallocatedFilters: BuyerFilters = { ...EMPTY_FILTERS, channels: ['Paid Ads'] }
+    const unallocatedComputer: SpendComputer = (s, e) => computeUnallocatedSpendForWindow(facts, unallocatedFilters, s, e)
+    const totalOf = (label: string, micromarkets: string[]) => {
+        const filters: BuyerFilters = { ...EMPTY_FILTERS, micromarkets, channels: ['Paid Ads'] }
+        const quarterBudget = targetsFor({ micromarkets, channels: ['Paid Ads'] })?.spendInr ?? null
+        return buildRow(label, 'grandTotal', quarterBudget, windows, (s, e) => computeSpendForWindow(facts, filters, s, e) + unallocatedComputer(s, e))
     }
 
     const pav = CLUSTER_TREE.PAV! // ['Powai', 'Vegas', 'Athens']
@@ -179,9 +190,11 @@ function buildMicromarketRows(facts: BuyerFacts, windows: Windows): BudgetPacing
         rowOf('Singapore', 'leaf', ['Singapore']),
         rowOf('BABU (incl. Singapore)', 'subtotal', babu),
         rowOf('BABU ex Singapore', 'subtotal', babuExSingapore),
-        rowOf('TOTAL — Truva ex BLR', 'grandTotal', exBlr),
+        totalOf('TOTAL — Truva ex BLR', exBlr),
         rowOf('Bangalore', 'leaf', ['Bangalore']),
-        rowOf('TOTAL — Truva inc. BLR', 'grandTotal', incBlr),
+        // No target: the grid has no cell for a campaign that named no micromarket at all.
+        buildRow('All MM', 'leaf', null, windows, unallocatedComputer),
+        totalOf('TOTAL — Truva inc. BLR', incBlr),
     ]
 }
 

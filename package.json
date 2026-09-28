@@ -16,7 +16,6 @@
         "test:watch": "vitest"
     },
     "dependencies": {
-        "@auth0/nextjs-auth0": "^4.0.2",
         "@sentry/nextjs": "^10.25.0",
         "@upstash/redis": "^1.38.0",
         "googleapis": "^144.0.0",

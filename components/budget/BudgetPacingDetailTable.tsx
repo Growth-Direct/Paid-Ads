@@ -83,7 +83,7 @@ export default function BudgetPacingDetailTable({
                         <th style={{ textAlign: 'left', padding: '4px 8px 8px 0' }}>{rowLabelHeader}</th>
                         <th style={th}>Quarter Budget</th>
                         <th style={th}>Should-Have Spent QTD</th>
-                        <th style={th}>Spent Till Yesterday</th>
+                        <th style={th}>Total Spends Till Last Updated</th>
                         <th style={th}>Lag (Plan − Actual)</th>
                         <th style={th}>% of Budget Spent</th>
                         <th style={th}>Budget Left</th>
