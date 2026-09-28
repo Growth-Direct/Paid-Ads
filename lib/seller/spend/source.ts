@@ -1,6 +1,7 @@
 import type { SellerSpendFact, SellerSpendIngest } from '../facts'
 import { ledgerConfigured } from '@/lib/buyer/spend/ledger'
 import { fetchSellerLedgerSpend } from './ledger'
+import { fetchSellerLiveSheetSpend, sellerLiveSheetConfigured } from './liveSheet'
 import { fetchMetaSellerSpend, metaDirectConfigured } from './meta'
 import { EMPTY_SELLER_SPEND_INGEST } from './parse'
 import snapshot from './spend-jas26.json'
@@ -27,7 +28,11 @@ export interface SellerSpendSnapshot {
 }
 
 export async function loadSellerSpend(windowStart: string, windowEnd: string): Promise<SellerSpendSnapshot> {
-    const base = ledgerConfigured() ? await fetchSellerLedgerSpend(windowStart, windowEnd) : fromSnapshot()
+    const base = sellerLiveSheetConfigured()
+        ? await fetchSellerLiveSheetSpend(windowStart, windowEnd)
+        : ledgerConfigured()
+          ? await fetchSellerLedgerSpend(windowStart, windowEnd)
+          : fromSnapshot()
     if (!metaDirectConfigured()) return base
     return overlayMetaSpend(base, await fetchMetaSellerSpend(windowStart, windowEnd))
 }

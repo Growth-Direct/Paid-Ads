@@ -149,10 +149,24 @@ export function parseSpendTable(header: string[], rows: string[][], builtAt: str
     }
 }
 
-const AD_PLATFORM_REQUIRED = ['date', 'lead source', 'campaign name', 'cost'] as const
+// Column names the growth team has used for spend, in the order tried. The sheet was
+// restructured into separate Buyer/Seller tabs on 2026-09-29 and "Cost" became "Amount spent
+// (INR)" in the move (the earlier "Spends" single-tab export used "Cost") — both are accepted
+// rather than picking one, so a future rename doesn't silently zero out every row until
+// someone notices the dashboard is empty and reads the diff. Impr/Clicks tolerate the same
+// drift; being optional, a total mismatch there degrades to 0 rather than a hard error.
+const SPEND_COLUMN_ALIASES = ['amount spent (inr)', 'cost']
+const IMPRESSIONS_COLUMN_ALIASES = ['impressions', 'impr']
+const CLICKS_COLUMN_ALIASES = ['link clicks', 'clicks']
 
-/** The growth team's live ad-platform export (the "Spends" Google Sheet, one row per
- *  day x campaign x ad set x ad) — replaces the old day x channel x micromarket x source
+function firstPresentKey(idx: Map<string, number>, aliases: string[]): string | null {
+    return aliases.find((a) => idx.has(a)) ?? null
+}
+
+const AD_PLATFORM_REQUIRED = ['date', 'lead source', 'campaign name'] as const
+
+/** The growth team's live ad-platform export (the "Spends" Google Sheet's Buyer tab, one row
+ *  per day x campaign x ad set x ad) — replaces the old day x channel x micromarket x source
  *  workbook this dashboard used to read. Dates here are always `D-Mon-YY`/`D-Mon-YYYY`
  *  (verified live 2026-09-28; no slash-form dates observed), so `parseSheetDate` needs no
  *  slash order. `Lead Source` already matches CHANNEL_MAP's keys exactly (`Meta`, `Google Ads`,
@@ -171,7 +185,9 @@ export function parseAdPlatformSpendTable(
     windowEnd?: string
 ): ParseResult {
     const idx = new Map(header.map((h, i) => [norm(h), i]))
-    const missing = AD_PLATFORM_REQUIRED.filter((r) => !idx.has(r))
+    const missing: string[] = AD_PLATFORM_REQUIRED.filter((r) => !idx.has(r))
+    const spendKey = firstPresentKey(idx, SPEND_COLUMN_ALIASES)
+    if (!spendKey) missing.push(`one of: ${SPEND_COLUMN_ALIASES.join(', ')}`)
     if (missing.length > 0) {
         return {
             facts: [],
@@ -191,6 +207,8 @@ export function parseAdPlatformSpendTable(
     }
 
     const col = (row: string[], key: string) => (row[idx.get(key)!] ?? '').trim()
+    const impressionsKey = firstPresentKey(idx, IMPRESSIONS_COLUMN_ALIASES)
+    const clicksKey = firstPresentKey(idx, CLICKS_COLUMN_ALIASES)
     const startMs = windowStart ? new Date(windowStart).getTime() : -Infinity
     const endMs = windowEnd ? new Date(windowEnd).getTime() : Infinity
     const agg = new Map<string, SpendFact>()
@@ -209,7 +227,7 @@ export function parseAdPlatformSpendTable(
         const dateMs = new Date(date).getTime()
         if (dateMs < startMs || dateMs >= endMs) continue
 
-        const spend = parseInr(col(row, 'cost'))
+        const spend = parseInr(col(row, spendKey!))
         if (spend === null) {
             droppedBadSpend++
             continue
@@ -223,8 +241,8 @@ export function parseAdPlatformSpendTable(
         const micromarket = micromarketFromCampaignName(campaignName)
         if (!micromarket && campaignName) unknownMm.add(campaignName)
 
-        const impressions = idx.has('impr') ? parseCount(col(row, 'impr')) : 0
-        const clicks = idx.has('clicks') ? parseCount(col(row, 'clicks')) : 0
+        const impressions = impressionsKey ? parseCount(col(row, impressionsKey)) : 0
+        const clicks = clicksKey ? parseCount(col(row, clicksKey)) : 0
 
         const key = `${date}|${channel}|${micromarket ?? ''}|${rawSource.toLowerCase()}`
         const existing = agg.get(key)

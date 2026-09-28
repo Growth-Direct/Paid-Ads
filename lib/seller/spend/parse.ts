@@ -64,6 +64,168 @@ export interface SellerParseResult {
     report: SellerSpendIngest
 }
 
+// Token lookup for deriving a micromarket out of a campaign NAME, for the live ad-platform
+// sheet (no micromarket column of its own) — mirrors lib/buyer/spend/parse.ts's
+// micromarketFromCampaignName, built from this tab's own micromarket list and typo fixes so
+// the two cannot drift apart.
+const MICROMARKET_TOKEN_ALIASES: Record<string, string> = (() => {
+    const map: Record<string, string> = {}
+    for (const mm of SELLER_MICROMARKETS) map[mm.toLowerCase().replace(/[^a-z0-9]/g, '')] = mm
+    map['glassgow'] = 'Glasgow'
+    map['anthens'] = 'Athens'
+    return map
+})()
+
+/** Every campaign in the live seller sheet names "AllMM" (verified 2026-09-29: 13 of 15
+ *  distinct campaigns), the exact same "not attributable to one micromarket" meaning the old
+ *  sheet's dedicated micromarket column used the literal value `All MM` for. Recognised as a
+ *  token so a campaign naming it is unallocated WITHOUT being flagged as an anomaly — same
+ *  rule UNALLOCATED_MICROMARKET_VALUES applies above, extended to campaign names. */
+const INTENTIONAL_UNALLOCATED_TOKEN = 'allmm'
+
+/** Resolves a campaign name to this tab's seller micromarket taxonomy. Exactly one micromarket
+ *  token found -> that micromarket. Zero or more than one, or a name that names only the
+ *  intentional-unallocated token -> unallocated; `unknown` says whether that is worth flagging
+ *  (false only when `allmm` is present and no real micromarket also is — a genuine ambiguity
+ *  or a fully generic campaign IS flagged, same as `resolveSellerMicromarket` does for the
+ *  sheet's old dedicated column). */
+export function sellerMicromarketFromCampaignName(campaignName: string): { micromarket: string | null; unknown: boolean } {
+    const tokens = campaignName.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+    const found = new Set<string>()
+    for (const t of tokens) {
+        const mm = MICROMARKET_TOKEN_ALIASES[t]
+        if (mm) found.add(mm)
+    }
+    for (let i = 0; i < tokens.length - 1; i++) {
+        const mm = MICROMARKET_TOKEN_ALIASES[tokens[i]! + tokens[i + 1]!]
+        if (mm) found.add(mm)
+    }
+    if (found.size === 1) return { micromarket: [...found][0]!, unknown: false }
+    const intentional = tokens.includes(INTENTIONAL_UNALLOCATED_TOKEN)
+    return { micromarket: null, unknown: !intentional }
+}
+
+const SPEND_COLUMN_ALIASES = ['amount spent (inr)', 'cost']
+const IMPRESSIONS_COLUMN_ALIASES = ['impressions', 'impr']
+const CLICKS_COLUMN_ALIASES = ['link clicks', 'clicks']
+
+function firstPresentKey(idx: Map<string, number>, aliases: string[]): string | null {
+    return aliases.find((a) => idx.has(a)) ?? null
+}
+
+const AD_PLATFORM_REQUIRED = ['date', 'lead source', 'campaign name'] as const
+
+/** The growth team's live ad-platform export (the "Spends" Google Sheet's Seller tab) — the
+ *  seller-side sibling of lib/buyer/spend/parse.ts's parseAdPlatformSpendTable. Same column
+ *  shape, same D-Mon-YY dates needing no slash order, same by-name column matching. Diverges
+ *  exactly where parseSellerSpendTable above diverges from the buyer one: SELLER_CHANNEL_MAP's
+ *  taxonomy, SELLER_MICROMARKETS' list, and the `AllMM` intentional-unallocated convention
+ *  this sheet's campaign names carry instead of a dedicated column value. */
+export function parseSellerAdPlatformSpendTable(
+    header: string[],
+    rows: string[][],
+    builtAt: string | null,
+    windowStart?: string,
+    windowEnd?: string
+): SellerParseResult {
+    const idx = new Map(header.map((h, i) => [norm(h), i]))
+    const missing: string[] = AD_PLATFORM_REQUIRED.filter((r) => !idx.has(r))
+    const spendKey = firstPresentKey(idx, SPEND_COLUMN_ALIASES)
+    if (!spendKey) missing.push(`one of: ${SPEND_COLUMN_ALIASES.join(', ')}`)
+    if (missing.length > 0) {
+        return {
+            facts: [],
+            report: {
+                origin: 'sheet-live',
+                status: 'schema-error',
+                error: `Missing required column(s): ${missing.join(', ')}`,
+                rowsRead: rows.length,
+                rowsKept: 0,
+                droppedBadDate: 0,
+                droppedBadSpend: 0,
+                slashOrder: null,
+                unallocatedInr: 0,
+                unmappedSources: [],
+                unknownMicromarkets: [],
+                builtAt,
+            },
+        }
+    }
+
+    const col = (row: string[], key: string) => (row[idx.get(key)!] ?? '').trim()
+    const impressionsKey = firstPresentKey(idx, IMPRESSIONS_COLUMN_ALIASES)
+    const clicksKey = firstPresentKey(idx, CLICKS_COLUMN_ALIASES)
+    const startMs = windowStart ? new Date(windowStart).getTime() : -Infinity
+    const endMs = windowEnd ? new Date(windowEnd).getTime() : Infinity
+    const agg = new Map<string, SellerSpendFact>()
+    const unmapped = new Set<string>()
+    const unknownMm = new Set<string>()
+    let droppedBadDate = 0
+    let droppedBadSpend = 0
+    let unallocatedInr = 0
+    let kept = 0
+
+    for (const row of rows) {
+        const date = parseSheetDate(col(row, 'date'), null)
+        if (!date) {
+            droppedBadDate++
+            continue
+        }
+        const dateMs = new Date(date).getTime()
+        if (dateMs < startMs || dateMs >= endMs) continue
+
+        const spend = parseInr(col(row, spendKey!))
+        if (spend === null) {
+            droppedBadSpend++
+            continue
+        }
+
+        const rawSource = col(row, 'lead source')
+        const channel = mapSellerChannel(rawSource) ?? 'Unmapped'
+        if (channel === 'Unmapped' && rawSource) unmapped.add(rawSource)
+
+        const campaignName = col(row, 'campaign name')
+        const resolved = sellerMicromarketFromCampaignName(campaignName)
+        const micromarket = resolved.micromarket
+        if (!micromarket) {
+            unallocatedInr += spend
+            if (resolved.unknown && campaignName) unknownMm.add(campaignName)
+        }
+
+        const impressions = impressionsKey ? parseCount(col(row, impressionsKey)) : 0
+        const clicks = clicksKey ? parseCount(col(row, clicksKey)) : 0
+
+        const key = `${date}|${channel}|${micromarket ?? ''}|${rawSource.toLowerCase()}`
+        const existing = agg.get(key)
+        if (existing) {
+            existing.spendInr += spend
+            existing.impressions += impressions
+            existing.clicks += clicks
+        } else {
+            agg.set(key, { date, channel, micromarket, rawSource: rawSource.toLowerCase(), spendInr: spend, impressions, clicks })
+        }
+        kept++
+    }
+
+    return {
+        facts: [...agg.values()],
+        report: {
+            origin: 'sheet-live',
+            status: 'ok',
+            error: null,
+            rowsRead: rows.length,
+            rowsKept: kept,
+            droppedBadDate,
+            droppedBadSpend,
+            slashOrder: null,
+            unallocatedInr,
+            unmappedSources: [...unmapped].slice(0, 20),
+            unknownMicromarkets: [...unknownMm].slice(0, 20),
+            builtAt,
+        },
+    }
+}
+
 /** `slashOrder` is required, not defaulted: the two tabs of this one workbook disagree on it,
  *  so inheriting a default is how you transpose every day and month. Callers derive it from
  *  the data with inferSlashOrder() and refuse to build when it can't be proved. */

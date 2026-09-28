@@ -70,6 +70,17 @@ describe('parseAdPlatformSpendTable', () => {
         expect(r.report.origin).toBe('sheet-live')
     })
 
+    it('also accepts the renamed columns the sheet moved to on 2026-09-29 (Amount spent (INR)/Impressions/Link clicks)', () => {
+        const newHeader = ['Date', 'Month', 'Lead Source', 'Campaign name', 'Campaign ID', 'Ad set name', 'Ad set ID', 'Ad name', 'Ad ID', 'Platform', 'Impressions', 'Link clicks', 'Amount spent (INR)']
+        const newRow = ['5-Aug-26', 'Aug-26', 'Meta', 'Meta_TOF_Lead_Buyer_Glasgow_SpecificBudget_Above4Cr_290725', '1', 'Aud_Test', '2', 'Ad_Test', '3', 'facebook', '100', '10', '500']
+        const r = parseAdPlatformSpendTable(newHeader, [newRow], null)
+        expect(r.report.status).toBe('ok')
+        expect(r.facts[0]!.spendInr).toBe(500)
+        expect(r.facts[0]!.impressions).toBe(100)
+        expect(r.facts[0]!.clicks).toBe(10)
+        expect(r.facts[0]!.micromarket).toBe('Glasgow')
+    })
+
     it('maps Lead Source through the same CHANNEL_MAP the old sheet used', () => {
         const r = parseAdPlatformSpendTable(
             HEADER,

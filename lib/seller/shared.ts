@@ -29,6 +29,10 @@ export const SELLER_CHANNEL_MAP: Record<string, SellerChannel> = {
     meta: 'Paid Ads',
     'google ads': 'Paid Ads',
     google_ads: 'Paid Ads',
+    // Bare "Google" — the live Spends sheet's Seller tab's Lead Source value (verified
+    // 2026-09-29), as opposed to "Google Ads" elsewhere. Buyer's CHANNEL_MAP already has this
+    // exact key for the same reason; seller's simply hadn't needed it until this sheet existed.
+    google: 'Paid Ads',
     linkedin: 'Paid Ads',
     'paid ads (unattributed)': 'Paid Ads',
     'society data - meta': 'Paid Ads',

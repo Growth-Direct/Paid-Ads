@@ -419,7 +419,7 @@ export default function BuyerTab({
                     groups={BUYER_TWO_WEEK_GROUPS}
                 />
                 <div style={{ fontSize: 11.5, color: '#333333', marginTop: 6, ...MONO }}>{nextTargetDisplay.caption}</div>
-                <SpendNote ingest={data.spendIngest} sheetName="Spends" />
+                <SpendNote ingest={data.spendIngest} sheetName="Buyer" />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14 }}>
                     <button
                         onClick={saveNextTargets}

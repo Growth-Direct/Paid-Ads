@@ -15,8 +15,11 @@ const TIMEOUT_MS = 20_000
 
 function config(): { sheetId: string; gid: string } | null {
     const sheetId = process.env.SPEND_SHEET_ID
-    if (!sheetId) return null
-    return { sheetId, gid: process.env.BUYER_SPEND_SHEET_GID?.trim() || '0' }
+    const gid = process.env.BUYER_SPEND_SHEET_GID
+    // No default gid: the sheet was restructured into separate tabs on 2026-09-29 and gid 0
+    // no longer holds buyer data, so guessing a tab here risks silently reading the wrong one.
+    if (!sheetId || !gid) return null
+    return { sheetId, gid }
 }
 
 export function liveSheetConfigured(): boolean {

@@ -358,7 +358,7 @@ export default function SellerTab({
                     groups={SELLER_TWO_WEEK_GROUPS}
                 />
                 <div style={{ fontSize: 11.5, color: '#333333', marginTop: 6, ...MONO }}>{nextTargetDisplay.caption}</div>
-                <SpendNote ingest={data.spendIngest} sheetName="Seller side spends" excludedUnallocated={data.spendExcludedUnallocated} />
+                <SpendNote ingest={data.spendIngest} sheetName="Seller" excludedUnallocated={data.spendExcludedUnallocated} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14 }}>
                     <button
                         onClick={saveNextTargets}
