@@ -5,4 +5,4 @@
  *  put a guess into a sentence the growth team reads as fact, and the guess would be wrong in
  *  exactly the case that matters: a ledger read that returned nothing looks like a snapshot
  *  that returned nothing. */
-export type SpendOrigin = 'ledger' | 'snapshot'
+export type SpendOrigin = 'ledger' | 'snapshot' | 'sheet-live'

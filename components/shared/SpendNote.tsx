@@ -88,15 +88,17 @@ export default function SpendNote({
 
     const when = onDate(ingest.builtAt)
     const parts: string[] = []
-    parts.push(
-        ingest.origin === 'ledger'
-            ? when
-                ? `Spend from the growth activity ledger, last pulled ${when}.`
-                : 'Spend from the growth activity ledger.'
-            : when
-              ? `Spend snapshot built ${when} from the "${sheetName}" sheet.`
-              : `Spend from the "${sheetName}" sheet.`
-    )
+    if (ingest.origin === 'ledger') {
+        parts.push(when ? `Spend from the growth activity ledger, last pulled ${when}.` : 'Spend from the growth activity ledger.')
+    } else if (ingest.origin === 'sheet-live') {
+        parts.push(
+            when
+                ? `Spend live from the "${sheetName}" sheet, pulled ${relativeTime(ingest.builtAt!)}.`
+                : `Spend live from the "${sheetName}" sheet.`
+        )
+    } else {
+        parts.push(when ? `Spend snapshot built ${when} from the "${sheetName}" sheet.` : `Spend from the "${sheetName}" sheet.`)
+    }
     // Meta specifically is fresher than the sentence above says — named separately rather
     // than folded into `origin`, since every other source (3P, Offline, etc.) genuinely still
     // comes from origin and saying otherwise would misstate where THEIR numbers come from.

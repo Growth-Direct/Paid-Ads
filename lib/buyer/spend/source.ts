@@ -1,27 +1,25 @@
 import type { SpendFact, SpendIngest } from '../facts'
 import { fetchLedgerSpend, ledgerConfigured } from './ledger'
+import { fetchLiveSheetSpend, liveSheetConfigured } from './liveSheet'
 import { fetchMetaSpend, metaDirectConfigured } from './meta'
 import snapshot from './spend-jas26.json'
 
-// Where buyer spend comes from.
+// Where buyer spend comes from, in priority order.
 //
-// Two things have to be true for the ledger to be read: `GROWTH_LEDGER_ENABLED` is not switched
-// off, and `GROWTH_LEDGER_BASE_URL` + `GROWTH_LEDGER_API_KEY` are both set. Either one missing
-// serves the committed snapshot instead. The flag defaults to on, so the only way to reach the
-// snapshot in a configured environment is to ask for it — see `ledgerEnabled()`.
+// 1. The live "Spends" Google Sheet (`SPEND_SHEET_ID` set) — added 2026-09-28 as a full
+//    replacement, per the growth team, for the old day x channel x micromarket x source
+//    workbook. Read straight off the sheet's public CSV export on every call; no credential,
+//    no committed file. See lib/buyer/spend/liveSheet.ts.
+// 2. The growth activity ledger, otherwise, when `GROWTH_LEDGER_ENABLED` is not switched off
+//    and `GROWTH_LEDGER_BASE_URL` + `GROWTH_LEDGER_API_KEY` are both set — one row per
+//    activity with its cost, written by the daily platform pulls and by the growth team
+//    logging offline and 3P cost in Growth Activities.
+// 3. The committed snapshot otherwise — the growth team's ~95K-row sheet summed to
+//    (day × channel × micromarket × source) by scripts/build-spend.ts. Kept as the fallback
+//    rather than deleted, because it is the only source of pre-ledger history and because an
+//    unconfigured environment should still render.
 //
-// The growth activity ledger, when it is configured — one row per activity with its cost,
-// written by the daily platform pulls and by the growth team logging offline and 3P cost in
-// Growth Activities. That makes the ledger the only source of growth spend, which is the
-// whole point of TECH-1227: two pipelines reading the same platforms will diverge, and every
-// divergence costs a reconciliation nobody has time for.
-//
-// The committed snapshot otherwise — the growth team's ~95K-row sheet summed to
-// (day × channel × micromarket × source) by scripts/build-spend.ts. Kept as the fallback
-// rather than deleted, because it is the only source of pre-ledger history and because an
-// unconfigured environment should still render.
-//
-// The boundary was always here for this swap; both paths return the same { facts, ingest }
+// The boundary was always here for this swap; every path returns the same { facts, ingest }
 // shape, and nothing downstream of loadSpend() changed.
 
 export interface SpendSnapshot {
@@ -67,7 +65,11 @@ function fromSnapshot(): SpendSnapshot {
  * block and the dashboard shows a gap, which is the honest answer.
  */
 export async function loadSpend(windowStart: string, windowEnd: string): Promise<SpendSnapshot> {
-    const base = ledgerConfigured() ? await fetchLedgerSpend(windowStart, windowEnd) : fromSnapshot()
+    const base = liveSheetConfigured()
+        ? await fetchLiveSheetSpend(windowStart, windowEnd)
+        : ledgerConfigured()
+          ? await fetchLedgerSpend(windowStart, windowEnd)
+          : fromSnapshot()
     if (!metaDirectConfigured()) return base
     return overlayMetaSpend(base, await fetchMetaSpend(windowStart, windowEnd))
 }
